@@ -20,6 +20,14 @@ const categorySchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    clicks: {
+        type: Number,
+        default: 0
+    },
+    isPopular: {
+        type: Boolean,
+        default: false
+    },
     status: {
         type: Boolean,
         default: true

@@ -52,6 +52,14 @@ const productSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    views: {
+        type: Number,
+        default: 0
+    },
+    isPopular: {
+        type: Boolean,
+        default: false
+    },
     status: {
         type: Boolean,
         default: true
