@@ -43,7 +43,11 @@ const userSchema = new mongoose.Schema({
 	},
 	shortDescription: {
 		type: String,
-		default: null,
+		default: null
+	},
+	isVerified: {
+		type: Boolean,
+		default: false
 	},
 	userRoles: [
 		{
@@ -52,9 +56,9 @@ const userSchema = new mongoose.Schema({
 			default: null,
 		},
 	],
-	status: {
+	isBlockedUser: {
 		type: Boolean,
-		default: true,
+		default: false
 	},
 	createdAt: {
 		type: Date,
