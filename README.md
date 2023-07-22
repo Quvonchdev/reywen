@@ -1,0 +1,2 @@
+# uyer.uz
+uyer API
