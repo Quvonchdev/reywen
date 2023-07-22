@@ -8,6 +8,7 @@ const { UserRole } = require('../models/user-models/user-role');
 const { OperationType } = require('../models/product-models/operation-type-model');
 const { CurrencyType } = require('../models/product-models/currency-type');
 const { PriceType } = require('../models/product-models/price-type-model');
+const { PaymentType } = require('../models/product-models/payment-type-model');
 
 // data [src/seedData/data]
 const regions = require('./data/regions.json');
@@ -17,6 +18,7 @@ const userRoles = require('./data/user-roles.json');
 const operationTypes = require('./data/operation-types.json');
 const currencyTypes = require('./data/currency-types.json');
 const priceTypes = require('./data/price-types.json');
+const paymentTypes = require('./data/payment-types.json');
 
 // connect to mongodb [src/connections/mongodb-connection.js]
 (async () => await mongodbConnection())();
@@ -167,6 +169,24 @@ async function seedPriceTypes() {
 	}
 }
 
+async function seedPaymentTypes() {
+	try {
+		(async () => {
+			if ((await PaymentType.countDocuments()) > 0) {
+				await PaymentType.deleteMany({});
+			}
+
+			await PaymentType.insertMany(paymentTypes);
+			console.log('🌱 Seed data successfully: PriceTypes');
+			process.exit(0);
+		})();
+	} catch (err) {
+		console.log(`❌ Error: ${err.message}`);
+		console.log('Shutting down the server due to Uncaught Exception');
+		process.exit(1);
+	}
+}
+
 // seed data do it one by one. I don't recommend to you run all at once. 
 // also it doesn't recommend to do it. After seeding data, don't do it again.
 // to run: npm run seed-data
@@ -178,3 +198,4 @@ async function seedPriceTypes() {
 // seedOperationTypes(); done!
 // seedCurrencyTypes(); done!
 // seedPriceTypes(); done!
+// seedPaymentTypes(); done!

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const currencyTypeSchema = new mongoose.Schema({
     name: {
         type: mongoose.Schema.Types.Mixed,

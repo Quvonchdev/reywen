@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Cash"
+    },
+    {
+        "name": "Credit Card"
+    },
+    {
+        "name": "Google Pay"
+    },
+    {
+        "name": "Amazon Pay"
+    },
+    {
+        "name": "Paypal"
+    },
+    {
+        "name": "Other"
+    }
+]

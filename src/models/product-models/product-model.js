@@ -33,6 +33,20 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    priceType: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PriceType'
+    },
+    discount: {
+        type: Number,
+        default: 0
+    },
+    paymentType: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'PaymentType'
+        }
+    ],
     slug: {
         type: mongoose.Schema.Types.Mixed,
         required: true,
