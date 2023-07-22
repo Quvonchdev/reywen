@@ -1,0 +1,32 @@
+[
+    {
+      "name": "sale"
+    },
+    {
+      "name": "rent"
+    },
+    {
+      "name": "lease" 
+    },
+    {
+      "name": "auction"
+    },
+    {
+      "name": "exchange"
+    },
+    {
+      "name": "gift"
+    },
+    {
+      "name": "family"
+    },
+    {
+      "name": "students(boys)"
+    },
+    {
+      "name": "students(girls)"
+    },
+    {
+      "name": "students"
+    }
+]
