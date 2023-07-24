@@ -187,7 +187,7 @@ async function seedPaymentTypes() {
 	}
 }
 
-// seed data do it one by one. I don't recommend to you run all at once. 
+// seed data do it one by one. I don't recommend to you run all at once.
 // also it doesn't recommend to do it. After seeding data, don't do it again.
 // to run: npm run seed-data
 

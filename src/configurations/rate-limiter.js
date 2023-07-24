@@ -1,5 +1,5 @@
 const rateLimiter = require('express-rate-limit');
-const ReturnResult = require('../helpers/return.result');
+const ReturnResult = require('../helpers/return-result');
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;

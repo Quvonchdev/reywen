@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
 	fullName: {
 		type: String,
 		required: true,
-		unique: true,
 		trim: true,
 		minlength: 3,
 		maxlength: 255,
@@ -32,33 +31,36 @@ const userSchema = new mongoose.Schema({
 		minlength: 3,
 		maxlength: 1024,
 	},
-	// required: false
 	email: {
 		type: String,
-		default: null,
+		required: true,
 		unique: true,
 		trim: true,
-		minlength: 5,
+		minlength: 3,
 		maxlength: 255,
 	},
+	// required: false
 	shortDescription: {
 		type: String,
-		default: null
+		default: null,
+	},
+	coverImage: {
+		type: String,
+		default: null,
 	},
 	isVerified: {
 		type: Boolean,
-		default: false
+		default: false,
 	},
 	userRoles: [
 		{
 			type: mongoose.Schema.ObjectId,
 			ref: 'UserRole',
-			default: null,
 		},
 	],
 	isBlockedUser: {
 		type: Boolean,
-		default: false
+		default: false,
 	},
 	createdAt: {
 		type: Date,

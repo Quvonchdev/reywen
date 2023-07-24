@@ -7,6 +7,7 @@ const internalError = require('./src/errors/internal-server');
 const invalidRoute = require('./src/errors/invalid-routes');
 
 const launchAppExtensions = require('./src/extensions/launch-extension');
+require('express-async-errors');
 
 // middleware
 commonMiddlewaresExtensions(app);
@@ -15,25 +16,9 @@ corsMiddlewareExtensions(app);
 
 // Routes
 routesMiddlewareExtensions(app);
+
 // Invalid Route error handling
 invalidRoute(app);
-
-const apiTimeout = 2 * 1000;
-app.use((req, res, next) => {
-	// Set the timeout for all HTTP requests
-	req.setTimeout(apiTimeout, () => {
-		let err = new Error('Request Timeout');
-		err.status = 408;
-		next(err);
-	});
-	// Set the server response timeout for all HTTP requests
-	res.setTimeout(apiTimeout, () => {
-		let err = new Error('Service Unavailable');
-		err.status = 503;
-		next(err);
-	});
-	next();
-});
 
 // Global Error handling
 internalError(app);

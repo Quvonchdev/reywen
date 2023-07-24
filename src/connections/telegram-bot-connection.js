@@ -1,6 +1,6 @@
 const { Telegraf } = require('telegraf');
-require('dotenv').config();
+const envSecretsConfig = require('../configurations/env-secrets-config');
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const bot = new Telegraf(envSecretsConfig.TELEGRAM_BOT_TOKEN);
 
 exports.bot = bot;

@@ -1,13 +1,15 @@
 const mongoose = require('mongoose');
+const envSecretsConfig = require('../configurations/env-secrets-config');
 
-const LOCAL_URL = 'mongodb://127.0.0.1:27017/Uyer';
-const PRODUCTION_URL = process.env.MONGODB_PRODUCTION_URL;
+const LOCAL_URL = envSecretsConfig.MONGODB_LOCAL_URL;
+const PRODUCTION_URL = envSecretsConfig.MONGODB_PRODUCTION_URL;
+const NODE_ENV = envSecretsConfig.NODE_ENV;
 
 let connectionString = '';
 
-if (process.env.NODE_ENV === 'development') {
+if (NODE_ENV === 'development') {
 	connectionString = LOCAL_URL;
-} else if (process.env.NODE_ENV === 'production') {
+} else if (NODE_ENV === 'production') {
 	connectionString = PRODUCTION_URL;
 } else {
 	connectionString = LOCAL_URL;
@@ -24,7 +26,7 @@ module.exports = async function mongodbConnection() {
 				serverSelectionTimeoutMS: 10000,
 			})
 			.then(() => {
-				console.log(`📦 MongoDB Connected: ${process.env.NODE_ENV}`);
+				console.log(`📦 MongoDB Connected: ${NODE_ENV}`);
 			})
 			.catch((err) => {
 				console.log('❌ MongoDB Connection Error: ', err.message);
@@ -43,6 +45,6 @@ module.exports = async function mongodbConnection() {
 			process.exit(0);
 		});
 	} catch (err) {
-		console.log('❌ MongoDB Connection Error: ', err.message);
+		console.log('❌ MongoDB Connection Error: ', err);
 	}
 };

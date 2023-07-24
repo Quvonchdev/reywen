@@ -1,62 +1,64 @@
 const redis = require('redis');
+const envSecretsConfig = require('../configurations/env-secrets-config');
 
+const NODE_ENV = envSecretsConfig.NODE_ENV;
 // for development
-const HOST = '127.0.0.1';
-const PORT = '6379';
+const LOCAL_HOST = envSecretsConfig.REDIS_LOCAL_HOST;
+const LOCAL_PORT = envSecretsConfig.REDIS_LOCAL_PORT;
 
 // for production
-const URL = process.env.REDIS_URL;
+const PRODUCTION_DEV_URL = envSecretsConfig.REDIS_URL;
 
 let redisClient = null;
 
 // for development
-if (process.env.NODE_ENV === 'development') {
+if (NODE_ENV === 'development') {
 	redisClient = redis.createClient({
 		socket: {
-			host: HOST,
-			port: PORT,
+			host: LOCAL_HOST,
+			port: LOCAL_PORT,
 		},
 	});
 
 	// ----------Redis Events------------- //
 	redisClient.on('connect', () => {
-		console.log(`🍅 Redis is connected: ${process.env.NODE_ENV}`);
+		console.log(`🍅 Redis is connected: ${NODE_ENV}`);
 	});
 
 	redisClient.on('error', (err) => {
-		console.log(`❌ Error in the Connection: ${process.env.NODE_ENV}`, err);
+		console.log(`❌ Error in the Connection: ${NODE_ENV}`, err);
 		redisClient.quit();
 	});
-} else if (process.env.NODE_ENV === 'production') {
+} else if (NODE_ENV === 'production') {
 	redisClient = redis.createClient({
-		url: URL,
+		url: PRODUCTION_DEV_URL,
 	});
 
 	// ----------Redis Events------------- //
 	redisClient.on('connect', () => {
-		console.log(`🍅 Redis is connected: ${process.env.NODE_ENV}`);
+		console.log(`🍅 Redis is connected: ${NODE_ENV}`);
 	});
 
 	redisClient.on('error', (err) => {
-		console.log(`❌ Error in the Connection: ${process.env.NODE_ENV}`, err);
+		console.log(`❌ Error in the Connection: ${NODE_ENV}`, err);
 		redisClient.quit();
 	});
 } else {
 	// for default also development
 	redisClient = redis.createClient({
 		socket: {
-			host: HOST,
-			port: PORT,
+			host: LOCAL_HOST,
+			port: LOCAL_PORT,
 		},
 	});
 
 	// ----------Redis Events------------- //
 	redisClient.on('connect', () => {
-		console.log(`🍅 Redis is connected: ${process.env.NODE_ENV}`);
+		console.log(`🍅 Redis is connected: ${NODE_ENV}`);
 	});
 
 	redisClient.on('error', (err) => {
-		console.log(`❌ Error in the Connection: ${process.env.NODE_ENV}`, err);
+		console.log(`❌ Error in the Connection: ${NODE_ENV}`, err);
 		redisClient.quit();
 	});
 }

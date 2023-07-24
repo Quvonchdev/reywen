@@ -1,8 +1,9 @@
 const cloudinary = require('cloudinary');
+const envSecretsConfig = require('../configurations/env-secrets-config');
 
-const CLOUDINARY_NAME = process.env.CLOUDINARY_NAME;
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+const CLOUDINARY_NAME = envSecretsConfig.CLOUDINARY_NAME;
+const CLOUDINARY_API_KEY = envSecretsConfig.CLOUDINARY_API_KEY;
+const CLOUDINARY_API_SECRET = envSecretsConfig.CLOUDINARY_API_SECRET;
 
 cloudinary.config({
 	cloud_name: CLOUDINARY_NAME,

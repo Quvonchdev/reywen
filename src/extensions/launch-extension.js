@@ -1,6 +1,7 @@
-const { bot } = require('../connections/telegram-bot.connection');
-const mongodbConnection = require('../connections/mongodb.connection');
-const redisClient = require('../connections/redis-cache.connection');
+const { bot } = require('../connections/telegram-bot-connection');
+const mongodbConnection = require('../connections/mongodb-connection');
+const redisClient = require('../connections/redis-cache-connection');
+const envSecretsConfig = require('../configurations/env-secrets-config');
 
 module.exports = (app) => {
 	// MongoDB Connection
@@ -10,9 +11,9 @@ module.exports = (app) => {
 		await redisClient.connect();
 	})();
 
-	const port = process.env.PORT || 3000;
+	const port = envSecretsConfig.PORT || 3000;
 	app.listen(port, () => {
-		console.log(`🚀 Server is running on port ${port}: ${process.env.NODE_ENV}`);
+		console.log(`🚀 Server is running on port ${port}: ${envSecretsConfig.NODE_ENV}`);
 
 		bot
 			.launch()

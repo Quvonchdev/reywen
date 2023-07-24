@@ -6,7 +6,7 @@ const envSecretsConfig = require('../configurations/env-secrets-config');
 const JWT_SECRET_KEY = envSecretsConfig.JWT_SECRET_KEY;
 
 // we don't need try catch block here because we are using express-async-errors
-module.exports = function blockedUser(req, res, next) {
+module.exports = function tokenExpired(req, res, next) {
 	const accessToken = req.headers.authorization?.split(' ')[1];
 
 	if (!accessToken) {
@@ -26,14 +26,9 @@ module.exports = function blockedUser(req, res, next) {
 			);
 	}
 
-	if (decodedToken.isBlockedUser) {
-		return res
-			.status(403)
-			.json(
-				ReturnResult.errorMessage(
-					'Your account has been blocked. Please contact admin for more information'
-				)
-			);
+	const currentTime = Date.now();
+	if (currentTime > decodedToken.expiredAt) {
+		return res.status(401).json(ReturnResult.errorMessage('Token expired. Please login again!'));
 	}
 
 	req.userData = {

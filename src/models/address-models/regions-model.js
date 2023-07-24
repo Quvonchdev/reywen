@@ -4,23 +4,23 @@ const regionSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
-		unique: true
+		unique: true,
 	},
 	id: {
 		type: Number,
-		default: null
+		default: null,
 	},
 	status: {
 		type: Boolean,
-		default: true
+		default: true,
 	},
 	shortDescription: {
 		type: String,
-		default: null
+		default: null,
 	},
 	createdAt: {
 		type: Date,
-		default: Date.now
+		default: Date.now,
 	},
 });
 

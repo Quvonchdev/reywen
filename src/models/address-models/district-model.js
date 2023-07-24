@@ -17,7 +17,7 @@ const districtSchema = new mongoose.Schema({
 	regionObjId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Region',
-		required: true
+		required: true,
 	},
 	status: {
 		type: Boolean,

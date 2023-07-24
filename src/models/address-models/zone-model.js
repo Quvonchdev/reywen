@@ -3,34 +3,34 @@ const mongoose = require('mongoose');
 const zoneSchema = new mongoose.Schema({
 	id: {
 		type: Number,
-		default: null
+		default: null,
 	},
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
-		unique: true
+		unique: true,
 	},
 	district_id: {
 		type: Number,
-		default: null
+		default: null,
 	},
 	districtObjId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'District',
-		required: true
+		required: true,
 	},
 	regionObjId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Region',
-		required: true
+		required: true,
 	},
 	status: {
 		type: Boolean,
-		default: true
+		default: true,
 	},
 	createdAt: {
 		type: Date,
-		default: Date.now
+		default: Date.now,
 	},
 });
 
