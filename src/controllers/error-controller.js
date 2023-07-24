@@ -24,7 +24,7 @@ const timeoutError = (req, res) => {
 		res.status(200).json({
 			message: 'Occured Error in the Timeout',
 		});
-	}, 5000);
+	}, 50000);
 };
 
 const error = (req, res) => {
