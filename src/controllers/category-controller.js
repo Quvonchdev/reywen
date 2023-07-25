@@ -112,16 +112,18 @@ const updateCategory = async (req, res) => {
 	let coverImage = category.coverImage;
 
 	if (req.file) {
-		if (category.coverImage.public_id) {
-			await Cloudinary.deleteFile(category.coverImage.public_id)
+		if(typeof category.coverImage === 'object') {
+			if (category.coverImage.hasOwnProperty('public_id')) {
+				await Cloudinary.deleteFile(category.coverImage.public_id)
 				.then((result) => {
 					return result;
 				})
 				.catch((err) => {
 					return res
-						.status(500)
-						.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
+					.status(500)
+					.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
 				});
+			}
 		}
 
 		const resultUploadedImage = await Cloudinary.uploadFile(req.file)
@@ -214,8 +216,10 @@ const batchDeleteCategories = async (req, res) => {
 	const coverImagesPublicIds = categories.filter((category) => category.coverImage !== null)
 		.filter((category) => typeof category.coverImage !== 'string')
 		.map((category) => {
-			if(category.coverImage.hasOwnProperty('public_id')) {
-				return category.coverImage.public_id;
+			if(typeof category.coverImage === 'object') {
+				if(category.coverImage.hasOwnProperty('public_id')) {
+					return category.coverImage.public_id;
+				}
 			}
 		});
 
