@@ -112,8 +112,8 @@ const updateCategory = async (req, res) => {
 	let coverImage = category.coverImage;
 
 	if (req.file) {
-		if(typeof category.coverImage === 'object') {
-			if (category.coverImage.hasOwnProperty('public_id')) {
+		if(typeof category.coverImage === 'object' && category.coverImage !== null) {
+			if (category.coverImage.public_id) {
 				await Cloudinary.deleteFile(category.coverImage.public_id)
 				.then((result) => {
 					return result;
@@ -216,7 +216,7 @@ const batchDeleteCategories = async (req, res) => {
 	const coverImagesPublicIds = categories.filter((category) => category.coverImage !== null)
 		.filter((category) => typeof category.coverImage !== 'string')
 		.map((category) => {
-			if(typeof category.coverImage === 'object') {
+			if(typeof category.coverImage === 'object' && category.coverImage !== null) {
 				if(category.coverImage.hasOwnProperty('public_id')) {
 					return category.coverImage.public_id;
 				}
