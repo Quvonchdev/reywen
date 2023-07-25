@@ -19,4 +19,5 @@ module.exports = {
 	JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
 	GMAIL: process.env.GMAIL,
 	GMAIL_PASSWORD: process.env.GMAIL_PASSWORD,
+	CLIENT_URL: process.env.CLIENT_URL,
 };

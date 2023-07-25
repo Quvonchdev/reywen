@@ -10,7 +10,11 @@ module.exports = (app) => {
 	if (envSecretsConfig.NODE_ENV === 'development') {
 		app.use(morgan('dev')); // Log requests to console
 	}
-	app.use(compression()); // Compress response bodies
+	app.use(compression({
+		threshold: 0,
+		level: 9,
+		memLevel: 9
+	})); // Compress response bodies
 	app.use(responseTime()); // Add X-Response-Time header
 	// app.use(timeout('120s'));
 	// give 150s for each request to finish

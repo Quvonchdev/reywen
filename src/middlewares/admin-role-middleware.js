@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const ReturnResult = require('../helpers/return-result');
 const { verifyAccessToken } = require('./verify-access-token');
 const envSecretsConfig = require('../configurations/env-secrets-config');
@@ -18,11 +17,7 @@ module.exports = function adminRole(req, res, next) {
 	const decodedToken = verifyAccessToken(accessToken, JWT_SECRET_KEY);
 
 	if (!decodedToken) {
-		return res
-			.status(401)
-			.json(
-				ReturnResult.errorMessage('Token is expired! Please login again')
-			);
+		return res.status(401).json(ReturnResult.errorMessage('Token is expired! Please login again'));
 	}
 
 	if (!decodedToken.userRoles.includes('Admin')) {
@@ -44,7 +39,7 @@ module.exports = function adminRole(req, res, next) {
 		isVerified: decodedToken.isVerified,
 		isBlockedUser: decodedToken.isBlockedUser,
 		coverImage: decodedToken.coverImage,
-		shortDescription: decodedToken.shortDescription
+		shortDescription: decodedToken.shortDescription,
 	};
 
 	next();

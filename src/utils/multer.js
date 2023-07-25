@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 
-const supportedFileExtensions = ['.mp4', '.pdf', '.mp3', '.jpg', '.jpeg', '.gif', '.webp'];
+const supportedFileExtensions = ['.mp4', '.pdf', '.mp3', '.jpg', '.jpeg', '.gif', '.webp', '.png'];
 
 module.exports = multer({
 	storage: multer.diskStorage({}),

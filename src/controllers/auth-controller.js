@@ -48,7 +48,6 @@ const ERROR_MESSAGES = {
 	USER_ALREADY_VERIFIED: 'User already verified',
 	LOGIN_OR_PASSWORD_INCORRECT: 'Login or password incorrect',
 	PASSWORD_SAME: 'New password must be different from old password',
-	VERIFY_CODE_NOT_FOUND: 'Verify code not found'
 };
 
 // we don't need try catch because we are using express-async-errors
@@ -152,7 +151,7 @@ exports.verifyAccount = async (req, res) => {
 
 	if (currentTime >= verify_code.expiredAt) {
 		await VerifyCode.deleteMany({
-			userId: userId
+			userId: userId,
 		});
 		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_EXPIRED));
 	}
@@ -168,7 +167,7 @@ exports.verifyAccount = async (req, res) => {
 	user.isVerified = true;
 	await user.save();
 	await VerifyCode.deleteMany({
-		userId: user._id
+		userId: user._id,
 	});
 
 	return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_VERIFIED));
@@ -220,7 +219,7 @@ exports.login = async (req, res) => {
 	const HOUR = 6; // hours
 	const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
 
-	const token = generateJwtToken(user, expiredAt);
+	const token = generateJwtToken(user);
 
 	return res.status(200).json(
 		ReturnResult.success(
@@ -231,7 +230,7 @@ exports.login = async (req, res) => {
 					expires_in: HOUR * 60 * 60,
 					expires_in_type: 'seconds',
 					expired_at: expiredAt,
-					expired_at_type: 'milliseconds'
+					expired_at_type: 'milliseconds',
 				},
 				user: {
 					_id: user._id,
@@ -240,7 +239,7 @@ exports.login = async (req, res) => {
 					phoneNumber: user.phoneNumber,
 					coverImage: user.coverImage,
 					isVerified: user.isVerified,
-					shortDescription: user.shortDescription
+					shortDescription: user.shortDescription,
 				},
 			},
 			SUCCESS_MESSAGES.USER_LOGGED_IN
@@ -259,7 +258,7 @@ exports.resendVerifyCode = async (req, res) => {
 	const { email } = req.body;
 
 	const user = await User.findOne({
-		email: email
+		email: email,
 	});
 
 	if (!user) {
@@ -268,7 +267,7 @@ exports.resendVerifyCode = async (req, res) => {
 
 	// delete all verify code of user; because we send new verify code
 	await VerifyCode.deleteMany({
-		userId: user._id
+		userId: user._id,
 	});
 
 	if (user.isVerified) {
@@ -289,128 +288,116 @@ exports.resendVerifyCode = async (req, res) => {
 };
 
 // !-- RESET PASSWORD --
-exports.resetPassword = async (req, res) => {  
-	  const { error } = validateResetPasswordSchema(req.body)
-  
-	  if (error) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.error(error, "Validation error"));
-	  }
-  
-	  const { email, password, confirmPassword, verifyCode } = req.body;
-  
-	  const user = await User.findOne({
-		email: email
-	  });
-  
-	  if (!user) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	  }
-	  
-	  const matchPassword = await bcrypt.compare(password, user.password);
-	  const matchConfirmPassword = await bcrypt.compare(confirmPassword, user.password);
-  
-	  if (matchPassword || matchConfirmPassword) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
-	  }
-  
-	  const verify_code = await VerifyCode.findOne({
+exports.resetPassword = async (req, res) => {
+	const { error } = validateResetPasswordSchema(req.body);
+
+	if (error) {
+		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+	}
+
+	const { email, password, confirmPassword, verifyCode } = req.body;
+
+	const user = await User.findOne({
+		email: email,
+	});
+
+	if (!user) {
+		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+	}
+
+	const matchPassword = await bcrypt.compare(password, user.password);
+	const matchConfirmPassword = await bcrypt.compare(confirmPassword, user.password);
+
+	if (matchPassword || matchConfirmPassword) {
+		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
+	}
+
+	const verify_code = await VerifyCode.findOne({
 		verifyCode: verifyCode,
-		userId: user._id
-	  });
-  
-	  
-	  if (!verify_code) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
-	  }
-  
-	  const salt = await bcrypt.genSalt(10);
-	  const hashedPassword = await hashPassword(password, salt);
-	  const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
-  
-	  await User.updateOne({
-		_id: user._id
-	  }, {
-		password: hashedPassword,
-		confirmPassword: hashedConfirmPassword
-	  });
-  
-	  await VerifyCode.deleteMany({
-		userId: user._id
-	  });
-  
-	  return res.status(200).json(
-		ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_RESET)
-	  )
-}
+		userId: user._id,
+	});
+
+	if (!verify_code) {
+		return res.status(400).send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
+	}
+
+	const salt = await bcrypt.genSalt(10);
+	const hashedPassword = await hashPassword(password, salt);
+	const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
+
+	await User.updateOne(
+		{
+			_id: user._id,
+		},
+		{
+			password: hashedPassword,
+			confirmPassword: hashedConfirmPassword,
+		}
+	);
+
+	await VerifyCode.deleteMany({
+		userId: user._id,
+	});
+
+	return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_RESET));
+};
 
 // !-- CHANGE PASSWORD --
 exports.changePassword = async (req, res) => {
 	const { error } = validateChangePasswordSchema(req.body);
 
 	if (error) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.error(error, "Validation error"));
+		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 	}
 
 	const { userId, oldPassword, newPassword, confirmNewPassword } = req.body;
 
 	const user = await User.findOne({
-		_id: userId
-	})
+		_id: userId,
+	});
 
 	if (!user) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 	}
 
 	const matchOldPassword = await bcrypt.compare(oldPassword, user.password);
 
 	if (!matchOldPassword) {
 		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
+			.status(400)
+			.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
 	}
 
 	const matchNewPassword = await bcrypt.compare(newPassword, user.password);
 
 	if (matchNewPassword) {
-		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
+		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
 	}
 
 	if (newPassword !== confirmNewPassword) {
 		return res
-		  .status(400)
-		  .send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
+			.status(400)
+			.send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
 	}
 
 	const salt = await bcrypt.genSalt(10);
 	const hashedPassword = await hashPassword(newPassword, salt);
 	const hashedConfirmPassword = await hashPassword(confirmNewPassword, salt);
 
-	await User.updateOne({
-		_id: user._id
-	}, {
-		password: hashedPassword,
-		confirmPassword: hashedConfirmPassword
-	},{
-		new: true
-	})
+	await User.updateOne(
+		{
+			_id: user._id,
+		},
+		{
+			password: hashedPassword,
+			confirmPassword: hashedConfirmPassword,
+		},
+		{
+			new: true,
+		}
+	);
 
-	return res.status(200).json(
-		ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED)
-	)
+	return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
 };
 
 // VALIDATIONS
@@ -438,7 +425,7 @@ function validateVerifyAccountSchema(reqBody) {
 
 function resendVerifyCodeSchema(reqBody) {
 	const schema = joi.object({
-		email: joi.string().email().required()
+		email: joi.string().email().required(),
 	});
 
 	return schema.validate(reqBody);
@@ -459,7 +446,7 @@ function validateResetPasswordSchema(reqBody) {
 		password: joi.string().min(6).max(30).required(),
 		confirmPassword: joi.string().min(6).max(30).required(),
 		verifyCode: joi.number().required(),
-	  });
+	});
 
 	return schema.validate(reqBody);
 }
@@ -469,8 +456,8 @@ function validateChangePasswordSchema(reqBody) {
 		userId: joi.string().required(),
 		oldPassword: joi.string().min(6).max(30).required(),
 		newPassword: joi.string().min(6).max(30).required(),
-		confirmNewPassword: joi.string().min(6).max(30).required()
-	  });
+		confirmNewPassword: joi.string().min(6).max(30).required(),
+	});
 
 	return schema.validate(reqBody);
 }
@@ -513,7 +500,7 @@ function hashPassword(password, salt) {
 }
 
 // GENERATE TOKEN FOR USER
-function generateJwtToken(user, expiredAt) {
+function generateJwtToken(user) {
 	return jwt.sign(
 		{
 			_id: user._id,
@@ -524,7 +511,7 @@ function generateJwtToken(user, expiredAt) {
 			isVerified: user.isVerified,
 			shortDescription: user.shortDescription,
 			isBlocked: user.isBlocked,
-			userRoles: user.userRoles
+			userRoles: user.userRoles,
 		},
 		envSecretsConfig.JWT_SECRET_KEY,
 		{
