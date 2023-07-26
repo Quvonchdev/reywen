@@ -434,8 +434,6 @@ const getCategoriesByPaginationForAdmin = async (req, res) => {
 	const PAGE = parseInt(page);
 	const LIMIT = parseInt(limit);
 
-	console.log(page, limit);
-
 	const cacheCategories = await RedisCache.get(`categoriesPgAdmin:${page}:${limit}`);
 
 	if (cacheCategories) {

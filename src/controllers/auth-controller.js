@@ -220,7 +220,6 @@ exports.login = async (req, res) => {
 	const HOUR = 6; // hours
 	const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
 
-	console.log(user);
 	const token = generateJwtToken(user);
 
 	return res.status(200).json(

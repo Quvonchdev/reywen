@@ -20,8 +20,6 @@ module.exports = function adminRole(req, res, next) {
 		return res.status(401).json(ReturnResult.errorMessage('Token is expired! Please login again'));
 	}
 
-	console.log(decodedToken);
-
 	if (!decodedToken.userRoles) {
 		return res.status(401).json(ReturnResult.errorMessage('Token is invalid! Please login again'));
 	}
