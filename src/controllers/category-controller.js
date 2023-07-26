@@ -472,6 +472,43 @@ const getCategoriesByPaginationForAdmin = async (req, res) => {
 		.json(ReturnResult.success(returnData, SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL));
 };
 
+const deleteCategoryCoverImage = async (req, res) => {
+	const { categoryId } = req.params;
+
+	const category = await Category.findById(categoryId);
+
+	if (!category) {
+		return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
+	}
+
+	if (
+		category.coverImageFullData &&
+		category.coverImageFullData !== null &&
+		typeof category.coverImageFullData == 'object'
+	) {
+		if (category.coverImageFullData.public_id) {
+			await Cloudinary.deleteFile(category.coverImageFullData.public_id)
+				.then((result) => {
+					return result;
+				})
+				.catch((err) => {
+					return res
+						.status(500)
+						.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_IMG_NOT_DELETED));
+				});
+		}
+	}
+
+	category.coverImage = null;
+	category.coverImageFullData = null;
+
+	await category.save();
+
+	await RedisCache.flush();
+
+	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_UPDATED));
+}
+
 // VALIDATIONS
 function validateCreateCategory(category) {
 	const schema = Joi.object({
@@ -524,4 +561,5 @@ module.exports = {
 	getCategoriesByPaginationForAdmin,
 	getCategoryForAdmin,
 	getCategoriesForAdmin,
+	deleteCategoryCoverImage,
 };

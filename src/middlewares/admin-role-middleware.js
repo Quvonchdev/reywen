@@ -26,7 +26,6 @@ module.exports = function adminRole(req, res, next) {
 		return res.status(401).json(ReturnResult.errorMessage('Token is invalid! Please login again'));
 	}
 
-	if (typeof decodedToken.userRoles === 'object') {
 		if (!decodedToken.userRoles.includes('Admin')) {
 			return res
 				.status(403)
@@ -36,7 +35,6 @@ module.exports = function adminRole(req, res, next) {
 					)
 				);
 		}
-	}
 
 	req.userData = {
 		_id: decodedToken._id,

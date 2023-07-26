@@ -124,7 +124,7 @@ exports.register = async (req, res) => {
 		coverImage: user.coverImage,
 		isVerified: user.isVerified,
 		shortDescription: user.shortDescription,
-		userRoles: user.userRoles || [],
+		userRoles: user.userRoles,
 	};
 	return res.status(200).json(ReturnResult.success(returnData, SUCCESS_MESSAGES.USER_REGISTERED));
 };

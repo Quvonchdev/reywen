@@ -51,5 +51,11 @@ router.post(
 	Category.batchDeleteCategories
 );
 
+router.delete(
+	'/cover-img/:categoryId',
+	[authRole, isBlockedUser, adminRole, rateLimit(25, 5)],
+	Category.deleteCategoryCoverImage
+);
+
 // go [src/extensions/routes-extension.js] to see how this works
 module.exports = router;
