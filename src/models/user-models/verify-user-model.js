@@ -17,7 +17,7 @@ const verifyCodeSchema = new mongoose.Schema({
 	expiredAt: {
 		type: Date,
 		default: () => {
-			return Date.now() + 1 * 60 * 1000; // expired after 1 minutes;
+			return Date.now() + 15 * 60 * 1000; // expired after 15 minutes;
 		},
 	},
 });

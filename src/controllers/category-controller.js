@@ -54,6 +54,7 @@ const createCategory = async (req, res) => {
 	}
 
 	let coverImage = null;
+	let coverImageFullData = null;
 
 	if (req.file) {
 		const resultUploadedImage = await Cloudinary.uploadFile(req.file).then((result) => {
@@ -64,19 +65,28 @@ const createCategory = async (req, res) => {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_CREATED));
 		}
 
-		coverImage = resultUploadedImage.data;
+		coverImageFullData = resultUploadedImage.data;
+
+		const { width, height, secure_url } = resultUploadedImage.data;
+
+		coverImage = {
+			width,
+			height,
+			secure_url,
+		};
 	}
 
 	const newCategory = new Category({
 		name: name,
 		shortDescription: shortDescription,
 		coverImage: coverImage,
+		coverImageFullData: coverImageFullData,
 		createdBy: createdBy,
 	});
 
 	const result = await newCategory.save();
 
-	await RedisCache.del('categories');
+	await RedisCache.flush();
 
 	return res.status(201).json(ReturnResult.success(result, SUCCESS_MESSAGES.CATEGORY_CREATED));
 };
@@ -110,19 +120,20 @@ const updateCategory = async (req, res) => {
 	}
 
 	let coverImage = category.coverImage;
+	let coverImageFullData = category.coverImageFullData;
 
 	if (req.file) {
-		if(typeof category.coverImage === 'object' && category.coverImage !== null) {
-			if (category.coverImage.public_id) {
-				await Cloudinary.deleteFile(category.coverImage.public_id)
-				.then((result) => {
-					return result;
-				})
-				.catch((err) => {
-					return res
-					.status(500)
-					.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
-				});
+		if (typeof category.coverImageFullData === 'object' && category.coverImageFullData !== null) {
+			if (category.coverImageFullData.public_id) {
+				await Cloudinary.deleteFile(category.coverImageFullData.public_id)
+					.then((result) => {
+						return result;
+					})
+					.catch((err) => {
+						return res
+							.status(500)
+							.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
+					});
 			}
 		}
 
@@ -140,12 +151,21 @@ const updateCategory = async (req, res) => {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.FILE_NOT_UPLOADED));
 		}
 
-		coverImage = resultUploadedImage.data;
+		coverImageFullData = resultUploadedImage.data;
+
+		const { width, height, secure_url } = resultUploadedImage.data;
+
+		coverImage = {
+			width,
+			height,
+			secure_url,
+		};
 	}
 
 	category.name = name;
 	category.shortDescription = shortDescription;
 	category.coverImage = coverImage;
+	category.coverImageFullData = coverImageFullData;
 	category.isPopular = isPopular;
 	category.status = status;
 	category.updatedBy = updatedBy;
@@ -153,8 +173,7 @@ const updateCategory = async (req, res) => {
 
 	await category.save();
 
-	await RedisCache.del('categories');
-	await RedisCache.del(`category:${categoryId}`);
+	await RedisCache.flush();
 
 	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_UPDATED));
 };
@@ -168,8 +187,12 @@ const deleteCategory = async (req, res) => {
 		return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
 	}
 
-	if (category.coverImage) {
-		if (category.coverImage.public_id) {
+	if (
+		category.coverImageFullData &&
+		category.coverImageFullData !== null &&
+		typeof category.coverImageFullData == 'object'
+	) {
+		if (category.coverImageFullData.public_id) {
 			await Cloudinary.deleteFile(category.coverImage.public_id)
 				.then((result) => {
 					return result;
@@ -182,8 +205,7 @@ const deleteCategory = async (req, res) => {
 		}
 	}
 
-	await RedisCache.del('categories');
-	await RedisCache.del(`category:${categoryId}`);
+	await RedisCache.flush();
 
 	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_DELETED));
 };
@@ -207,18 +229,19 @@ const batchDeleteCategories = async (req, res) => {
 		_id: {
 			$in: ids,
 		},
-	})
+	});
 
 	if (categories.length === 0) {
 		return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORIES_NOT_FOUND));
 	}
 
-	const coverImagesPublicIds = categories.filter((category) => category.coverImage !== null)
-		.filter((category) => typeof category.coverImage !== 'string')
+	const coverImagesPublicIds = categories
+		.filter((category) => category.coverImageFullData !== null)
+		.filter((category) => typeof category.coverImageFullData !== 'string')
 		.map((category) => {
-			if(typeof category.coverImage === 'object' && category.coverImage !== null) {
-				if(category.coverImage.hasOwnProperty('public_id')) {
-					return category.coverImage.public_id;
+			if (typeof category.coverImageFullData === 'object' && category.coverImageFullData !== null) {
+				if (category.coverImageFullData.hasOwnProperty('public_id')) {
+					return category.coverImageFullData.public_id;
 				}
 			}
 		});
@@ -234,36 +257,66 @@ const batchDeleteCategories = async (req, res) => {
 					.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_IMG_NOT_DELETED));
 			});
 
-		if(result.error) {
+		if (result.error) {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_DELETED));
 		}
 	}
 
 	await Category.deleteMany({
 		_id: {
-			$in: ids
+			$in: ids,
 		},
 	});
-	
-	await RedisCache.del('categories');
-	await ids.forEach(async (id) => {
-		await RedisCache.del(`category:${id}`);
-	});
+
+	await RedisCache.flush();
 
 	return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.CATEGORY_BATCH_DELETED));
 };
 
 const getCategories = async (req, res) => {
-
 	const cachedCategories = await RedisCache.get('categories');
 
-	if(cachedCategories) {
-		return res.status(200).json(ReturnResult.success(JSON.parse(cachedCategories), SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL, true));
+	if (cachedCategories) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(
+					JSON.parse(cachedCategories),
+					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
+					true
+				)
+			);
+	}
+
+	const categories = await Category.find().select(
+		'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData'
+	);
+
+	await RedisCache.set('categories', JSON.stringify(categories));
+
+	return res
+		.status(200)
+		.json(ReturnResult.success(categories, SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL));
+};
+
+const getCategoriesForAdmin = async (req, res) => {
+	const cachedCategories = await RedisCache.get('categoriesAdmin');
+
+	if (cachedCategories) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(
+					JSON.parse(cachedCategories),
+					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
+					true
+				)
+			);
 	}
 
 	const categories = await Category.find();
 
-	await RedisCache.set('categories', JSON.stringify(categories));
+	await RedisCache.set('categoriesAdmin', JSON.stringify(categories));
 
 	return res
 		.status(200)
@@ -275,8 +328,38 @@ const getCategory = async (req, res) => {
 
 	const cashedCategory = await RedisCache.get(`category:${categoryId}`);
 
-	if(cashedCategory) {
-		return res.status(200).json(ReturnResult.success(JSON.parse(cashedCategory), SUCCESS_MESSAGES.CATEGORY_FETCHED, true));
+	if (cashedCategory) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(JSON.parse(cashedCategory), SUCCESS_MESSAGES.CATEGORY_FETCHED, true)
+			);
+	}
+
+	const category = await Category.findById(categoryId).select(
+		'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData'
+	);
+
+	if (!category) {
+		return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
+	}
+
+	await RedisCache.set(`category:${categoryId}`, JSON.stringify(category));
+
+	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_FETCHED));
+};
+
+const getCategoryForAdmin = async (req, res) => {
+	const { categoryId } = req.params;
+
+	const cashedCategory = await RedisCache.get(`categoryAdmin:${categoryId}`);
+
+	if (cashedCategory) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(JSON.parse(cashedCategory), SUCCESS_MESSAGES.CATEGORY_FETCHED, true)
+			);
 	}
 
 	const category = await Category.findById(categoryId);
@@ -285,7 +368,7 @@ const getCategory = async (req, res) => {
 		return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
 	}
 
-	await RedisCache.set(`category:${categoryId}`, JSON.stringify(category));
+	await RedisCache.set(`categoryAdmin:${categoryId}`, JSON.stringify(category));
 
 	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_FETCHED));
 };
@@ -302,7 +385,22 @@ const getCategoriesByPagination = async (req, res) => {
 	const PAGE = parseInt(page);
 	const LIMIT = parseInt(limit);
 
+	const cacheCategories = await RedisCache.get(`categories:${page}:${limit}`);
+
+	if (cacheCategories) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(
+					JSON.parse(cacheCategories),
+					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
+					true
+				)
+			);
+	}
+
 	const categories = await Category.find()
+		.select('-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData')
 		.limit(LIMIT * 1)
 		.skip((PAGE - 1) * LIMIT)
 		.exec();
@@ -315,14 +413,63 @@ const getCategoriesByPagination = async (req, res) => {
 		currentPage: page,
 		currentItem: categories.length,
 		data: categories,
+	};
+
+	await RedisCache.set(`categories:${page}:${limit}`, JSON.stringify(returnData));
+
+	return res
+		.status(200)
+		.json(ReturnResult.success(returnData, SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL));
+};
+
+const getCategoriesByPaginationForAdmin = async (req, res) => {
+	const { error } = validateCategoryParams(req.query);
+
+	if (error) {
+		return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
 	}
 
-	return res.status(200).json(
-		ReturnResult.success(
-			returnData,
-			SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL
-		)
-	);
+	const { page, limit } = req.query;
+
+	const PAGE = parseInt(page);
+	const LIMIT = parseInt(limit);
+
+	console.log(page, limit);
+
+	const cacheCategories = await RedisCache.get(`categoriesPgAdmin:${page}:${limit}`);
+
+	if (cacheCategories) {
+		return res
+			.status(200)
+			.json(
+				ReturnResult.success(
+					JSON.parse(cacheCategories),
+					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
+					true
+				)
+			);
+	}
+
+	const categories = await Category.find({})
+		.limit(LIMIT * 1)
+		.skip((PAGE - 1) * LIMIT)
+		.exec();
+
+	const count = await Category.countDocuments();
+
+	let returnData = {
+		totalPages: Math.ceil(Number(count / limit)),
+		totalItems: count,
+		currentPage: page,
+		currentItem: categories.length,
+		data: categories,
+	};
+
+	await RedisCache.set(`categoriesPgAdmin:${page}:${limit}`, JSON.stringify(returnData));
+
+	return res
+		.status(200)
+		.json(ReturnResult.success(returnData, SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL));
 };
 
 // VALIDATIONS
@@ -351,7 +498,7 @@ function validateUpdateCategory(category) {
 function validateBatchDeleteCategories(categories) {
 	const schema = Joi.object({
 		ids: Joi.array().items(Joi.string()).required(),
-		userId: Joi.string().required()
+		userId: Joi.string().required(),
 	});
 
 	return schema.validate(categories);
@@ -374,4 +521,7 @@ module.exports = {
 	getCategories,
 	getCategoriesByPagination,
 	getCategory,
+	getCategoriesByPaginationForAdmin,
+	getCategoryForAdmin,
+	getCategoriesForAdmin,
 };

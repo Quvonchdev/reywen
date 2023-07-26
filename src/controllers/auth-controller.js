@@ -124,6 +124,7 @@ exports.register = async (req, res) => {
 		coverImage: user.coverImage,
 		isVerified: user.isVerified,
 		shortDescription: user.shortDescription,
+		userRoles: user.userRoles || [],
 	};
 	return res.status(200).json(ReturnResult.success(returnData, SUCCESS_MESSAGES.USER_REGISTERED));
 };
@@ -219,6 +220,7 @@ exports.login = async (req, res) => {
 	const HOUR = 6; // hours
 	const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
 
+	console.log(user);
 	const token = generateJwtToken(user);
 
 	return res.status(200).json(
@@ -468,7 +470,7 @@ function mailOptions(user, verificationCode) {
 		from: envSecretsConfig.GMAIL,
 		to: user.email,
 		subject: 'Email Verification',
-		html: emailTemplate(user.fullName, verificationCode, 1),
+		html: emailTemplate(user.fullName, verificationCode, 15),
 	};
 }
 
@@ -509,9 +511,9 @@ function generateJwtToken(user) {
 			phoneNumber: user.phoneNumber,
 			coverImage: user.coverImage,
 			isVerified: user.isVerified,
+			userRoles: user.userRoles || [],
 			shortDescription: user.shortDescription,
-			isBlocked: user.isBlocked,
-			userRoles: user.userRoles,
+			isBlockedUser: user.isBlockedUser,
 		},
 		envSecretsConfig.JWT_SECRET_KEY,
 		{

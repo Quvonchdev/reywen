@@ -20,14 +20,22 @@ module.exports = function adminRole(req, res, next) {
 		return res.status(401).json(ReturnResult.errorMessage('Token is expired! Please login again'));
 	}
 
-	if (!decodedToken.userRoles.includes('Admin')) {
-		return res
-			.status(403)
-			.json(
-				ReturnResult.errorMessage(
-					"You don't have permission to access this resource. Please contact admin for more information"
-				)
-			);
+	console.log(decodedToken);
+
+	if (!decodedToken.userRoles) {
+		return res.status(401).json(ReturnResult.errorMessage('Token is invalid! Please login again'));
+	}
+
+	if (typeof decodedToken.userRoles === 'object') {
+		if (!decodedToken.userRoles.includes('Admin')) {
+			return res
+				.status(403)
+				.json(
+					ReturnResult.errorMessage(
+						"You don't have permission to access this resource. Please contact admin for more information"
+					)
+				);
+		}
 	}
 
 	req.userData = {

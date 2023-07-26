@@ -15,6 +15,10 @@ const categorySchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
+	coverImageFullData: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
 	slug: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,

@@ -52,12 +52,10 @@ const userSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false,
 	},
-	userRoles: [
-		{
-			type: mongoose.Schema.ObjectId,
-			ref: 'UserRole',
-		},
-	],
+	userRoles: {
+		type: [String],
+		default: ['User']
+	},
 	isBlockedUser: {
 		type: Boolean,
 		default: false,
