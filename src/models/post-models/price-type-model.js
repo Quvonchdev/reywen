@@ -6,6 +6,10 @@ const priceTypeSchema = new mongoose.Schema({
 		required: true,
 		unique: true,
 	},
+	shortDescription: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
 	status: {
 		type: Boolean,
 		default: true,

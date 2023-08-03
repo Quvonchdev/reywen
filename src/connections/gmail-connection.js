@@ -4,7 +4,7 @@ const envSecretsConfig = require('../configurations/env-secrets-config');
 const EMAIL = envSecretsConfig.GMAIL;
 const PASSWORD = envSecretsConfig.GMAIL_PASSWORD;
 
-let transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
 	service: 'gmail',
 	auth: {
 		user: `${EMAIL}`,

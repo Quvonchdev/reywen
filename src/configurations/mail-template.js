@@ -1,4 +1,4 @@
-function emailTemplate(userName, access_code, minute = 5) {
+function emailTemplate(userName, access_code, expiredAt = 15) {
 	return `
       <html>
         <head>
@@ -48,7 +48,7 @@ function emailTemplate(userName, access_code, minute = 5) {
             <div class="content">
               <p>Your access code is:</p>
               <h2 class="access-code">${access_code}</h2>
-              <p>Access token expires in ${minute} minutes.</p>
+              <p>Access token expires in ${expiredAt} minutes.</p>
             </div>
           </div>
         </body>

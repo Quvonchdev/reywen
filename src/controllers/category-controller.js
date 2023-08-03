@@ -1,4 +1,4 @@
-const { Category } = require('../models/product-models/category-model');
+const { Category } = require('../models/post-models/category-model');
 const Joi = require('joi');
 const { User } = require('../models/user-models/user-model');
 const Cloudinary = require('../utils/cloudinary');
@@ -505,7 +505,7 @@ const deleteCategoryCoverImage = async (req, res) => {
 	await RedisCache.flush();
 
 	return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_UPDATED));
-}
+};
 
 // VALIDATIONS
 function validateCreateCategory(category) {

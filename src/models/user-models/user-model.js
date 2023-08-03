@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema({
 	},
 	userRoles: {
 		type: [String],
-		default: ['User']
+		default: ['User'],
 	},
 	isBlockedUser: {
 		type: Boolean,

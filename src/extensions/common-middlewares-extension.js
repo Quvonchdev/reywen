@@ -18,6 +18,4 @@ module.exports = (app) => {
 		})
 	); // Compress response bodies
 	app.use(responseTime()); // Add X-Response-Time header
-	// app.use(timeout('120s'));
-	// give 150s for each request to finish
 };

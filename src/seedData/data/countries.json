@@ -1,0 +1,48 @@
+[
+    {
+      "name": "Uzbekistan",
+      "Code": "UZ",
+      "phoneCode": "+998",
+      "currencyCode": "UZS",
+      "currencyName": "Uzbekistani Som",
+      "status": true,
+      "shortDescription": "Uzbekistan is a country in Central Asia."
+    },
+    {
+      "name": "Kyrgyzstan",
+      "Code": "KG",
+      "phoneCode": "+996",
+      "currencyCode": "KGS",
+      "currencyName": "Kyrgyzstani Som",
+      "status": false,
+      "shortDescription": "Kyrgyzstan is a country in Central Asia."
+    },
+    {
+      "name": "Kazakhstan",
+      "Code": "KZ",
+      "phoneCode": "+7",
+      "currencyCode": "KZT",
+      "currencyName": "Kazakhstani Tenge",
+      "status": false,
+      "shortDescription":"Kazakhstan is a country in Central Asia."
+    },
+    {
+      "name": "Tajikistan",
+      "Code": "TJ",
+      "phoneCode": "+992",
+      "currencyCode": "TJS",
+      "currencyName": "Tajikistani Somoni",
+      "status": false,
+      "shortDescription": "Tajikistan is a country in Central Asia."
+    },
+    {
+      "name": "Turkmenistan",
+      "Code": "TM",
+      "phoneCode": "+993",
+      "currencyCode": "TMT",
+      "currencyName": "Turkmenistan Manat",
+      "status": false,
+      "shortDescription": "Turkmenistan is a country in Central Asia."
+    }
+  ]
+  

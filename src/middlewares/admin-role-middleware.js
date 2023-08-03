@@ -1,50 +1,32 @@
 const ReturnResult = require('../helpers/return-result');
-const { verifyAccessToken } = require('./verify-access-token');
+const {
+	verifyAccessToken,
+	verifyDecodedTokenExists,
+	verifyDecodedTokenHasAdminRole,
+	verifyUserData,
+	reqAccessToken,
+} = require('./verify-access-token');
 const envSecretsConfig = require('../configurations/env-secrets-config');
-
+const ERROR_MESSAGES = require('./error-messages');
 const JWT_SECRET_KEY = envSecretsConfig.JWT_SECRET_KEY;
 
-// we don't need try catch block here because we are using express-async-errors
 module.exports = function adminRole(req, res, next) {
-	const accessToken = req.headers.authorization?.split(' ')[1];
+	const accessToken = reqAccessToken(req);
+
 	if (!accessToken) {
-		return res
-			.status(401)
-			.json(
-				ReturnResult.errorMessage('Token not found. Authentication failed. Please login again')
-			);
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.TOKEN_NOT_FOUND));
 	}
 	const decodedToken = verifyAccessToken(accessToken, JWT_SECRET_KEY);
 
-	if (!decodedToken) {
-		return res.status(401).json(ReturnResult.errorMessage('Token is expired! Please login again'));
+	if (!verifyDecodedTokenExists(decodedToken)) {
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
-	if (!decodedToken.userRoles) {
-		return res.status(401).json(ReturnResult.errorMessage('Token is invalid! Please login again'));
+	if (!verifyDecodedTokenHasAdminRole(decodedToken)) {
+		return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.NO_ACCESS));
 	}
 
-		if (!decodedToken.userRoles.includes('Admin')) {
-			return res
-				.status(403)
-				.json(
-					ReturnResult.errorMessage(
-						"You don't have permission to access this resource. Please contact admin for more information"
-					)
-				);
-		}
-
-	req.userData = {
-		_id: decodedToken._id,
-		fullName: decodedToken.fullName,
-		email: decodedToken.email,
-		phoneNumber: decodedToken.phoneNumber,
-		userRoles: decodedToken.userRoles,
-		isVerified: decodedToken.isVerified,
-		isBlockedUser: decodedToken.isBlockedUser,
-		coverImage: decodedToken.coverImage,
-		shortDescription: decodedToken.shortDescription,
-	};
+	req.userData = verifyUserData(decodedToken);
 
 	next();
 };

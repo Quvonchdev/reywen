@@ -1,16 +1,18 @@
 const mongodbConnection = require('../connections/mongodb-connection');
 
 // models [src/models]
+const { Country } = require('../models/address-models/country-model');
 const { Region } = require('../models/address-models/regions-model');
 const { District } = require('../models/address-models/district-model');
 const { Zone } = require('../models/address-models/zone-model');
 const { UserRole } = require('../models/user-models/user-role');
-const { OperationType } = require('../models/product-models/operation-type-model');
-const { CurrencyType } = require('../models/product-models/currency-type');
-const { PriceType } = require('../models/product-models/price-type-model');
-const { PaymentType } = require('../models/product-models/payment-type-model');
+const { OperationType } = require('../models/post-models/operation-type-model');
+const { CurrencyType } = require('../models/post-models/currency-type-model');
+const { PriceType } = require('../models/post-models/price-type-model');
+const { PaymentType } = require('../models/post-models/payment-type-model');
 
 // data [src/seedData/data]
+const countries = require('./data/countries.json');
 const regions = require('./data/regions.json');
 const districts = require('./data/districts.json');
 const zones = require('./data/zones.json');
@@ -24,12 +26,38 @@ const paymentTypes = require('./data/payment-types.json');
 (async () => await mongodbConnection())();
 
 // seed data
+
+async function seedCountries() {
+	try {
+		(async () => {
+			if ((await Country.countDocuments()) > 0) {
+				await Country.deleteMany({});
+			}
+
+			await Country.insertMany(countries);
+			console.log('🌱 Seed data successfully: Countries');
+			process.exit(0);
+		})();
+	} catch (err) {
+		console.log(`❌ Error: ${err.message}`);
+		console.log('Shutting down the server due to Uncaught Exception');
+		process.exit(1);
+	}
+}
+
 async function seedRegions() {
 	try {
 		(async () => {
 			if ((await Region.countDocuments()) > 0) {
 				await Region.deleteMany({});
 			}
+
+			// add countryId to regions number = 1
+			let Countries = await Country.find({});
+			regions.forEach((region) => {
+				// add countryObjId to regions
+				region.countryObjId = Countries[0]._id;
+			});
 
 			await Region.insertMany(regions);
 			console.log('🌱 Seed data successfully: Regions');
@@ -76,11 +104,10 @@ async function seedZones() {
 				await Zone.deleteMany({});
 			}
 
-			let Districts = await District.find({});
+			let districts = await District.find({});
 			zones.forEach((zone) => {
-				Districts.forEach((ds) => {
+				districts.forEach((ds) => {
 					if (ds.id === zone.district_id) {
-						zone.regionObjId = ds.regionObjId;
 						zone.districtObjId = ds._id;
 					}
 				});
@@ -189,13 +216,15 @@ async function seedPaymentTypes() {
 
 // seed data do it one by one. I don't recommend to you run all at once.
 // also it doesn't recommend to do it. After seeding data, don't do it again.
+// because it will delete all data and insert again!
 // to run: npm run seed-data
 
-// seedRegions(); done!
-// seedDistricts(); done!
-// seedZones(); done!
-// seedUserRoles(); done!
-// seedOperationTypes(); done!
-// seedCurrencyTypes(); done!
-// seedPriceTypes(); done!
-// seedPaymentTypes(); done!
+// seedCountries();
+// seedRegions();
+// seedDistricts();
+// seedZones();
+// seedUserRoles();
+// seedOperationTypes();
+// seedCurrencyTypes();
+// seedPriceTypes();
+// seedPaymentTypes();

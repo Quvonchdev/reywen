@@ -1,11 +1,25 @@
 const cors = require('cors');
+const secrets = require('../configurations/env-secrets-config');
 
 module.exports = (app) => {
-	const origin = '*';
+	let origins;
+
+	if (secrets.NODE_ENV === 'production') {
+		origins = [
+			'https://www.yourdomain.com',
+			'https://yourdomain.com',
+			'https://yourdomain.com:3000',
+			'https://yourdomain.com:5000',
+			'https://yourdomain.com:8080',
+		];
+	} else {
+		origins = '*';
+	}
 
 	app.use(
+		// cors settings url : https://www.npmjs.com/package/cors
 		cors({
-			origin: origin,
+			origin: origins,
 			methods: ['GET', 'POST', 'PUT', 'DELETE'],
 			allowedHeaders: ['Content-Type', 'Authorization'],
 			credentials: true,

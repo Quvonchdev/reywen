@@ -1,13 +1,18 @@
 const error = require('../routes/error-routes');
 const auth = require('../routes/auth-routes');
 const category = require('../routes/category-routes');
+const rateLimit = require('../configurations/rate-limiter');
 
-// import routes here : example below
-// you can user rate limiting here also
+const URL = '/api/v1';
+
 module.exports = (app) => {
-	app.use('/api/v1/error', error);
-	app.use('/api/v1/user', auth);
-	app.use('/api/v1/category', category);
-};
+	// Add routes here
+	routes('user', auth);
+	routes('category', category);
+	routes('error', error);
 
-// after registering the routes, you don't need to import them in index.js
+	// function to register routes. Don't touch this
+	function routes(route, router) {
+		app.use(`${URL}/${route}`, router);
+	}
+};

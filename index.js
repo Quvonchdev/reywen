@@ -2,24 +2,26 @@ const express = require('express');
 const app = express();
 const commonMiddlewaresExtensions = require('./src/extensions/common-middlewares-extension');
 const corsMiddlewareExtensions = require('./src/extensions/cors-extension');
+const helmetMiddlewareExtensions = require('./src/extensions/helmet-extension');
 const routesMiddlewareExtensions = require('./src/extensions/routes-extension');
 const internalError = require('./src/errors/internal-server');
 const invalidRoute = require('./src/errors/invalid-routes');
 
 const launchAppExtensions = require('./src/extensions/launch-extension');
+
+// You dont have to use try catch block for async functions
+// This package will handle it for you
 require('express-async-errors');
 
-// middleware
+// Middlewares
 commonMiddlewaresExtensions(app);
-// cors middleware
 corsMiddlewareExtensions(app);
+helmetMiddlewareExtensions(app);
 
-// Routes
 routesMiddlewareExtensions(app);
 
 // Invalid Route error handling
 invalidRoute(app);
-
 // Global Error handling
 internalError(app);
 

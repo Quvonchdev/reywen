@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 
+// add here file extensions that you want to accept
 const supportedFileExtensions = ['.mp4', '.pdf', '.mp3', '.jpg', '.jpeg', '.gif', '.webp', '.png'];
 
 module.exports = multer({

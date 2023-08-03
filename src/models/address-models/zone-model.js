@@ -19,11 +19,6 @@ const zoneSchema = new mongoose.Schema({
 		ref: 'District',
 		required: true,
 	},
-	regionObjId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Region',
-		required: true,
-	},
 	status: {
 		type: Boolean,
 		default: true,

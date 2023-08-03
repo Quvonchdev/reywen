@@ -12,7 +12,7 @@ function generateSlug(name) {
 		}
 		return slugTranslations;
 	}
-	return name; // If name is not a string or an object, return as it is.
+	return name;
 }
 
 module.exports = generateSlug;

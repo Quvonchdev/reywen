@@ -9,7 +9,9 @@
     "prettier": "prettier --write \"**/*.js\"",
     "lint": "eslint --fix \"**/*.js\"",
     "seed-data": "cross-env NODE_ENV=development node ./src/seedData/seed-data.js",
-    "seed-data:prod": "cross-env NODE_ENV=production node ./src/seedData/seed-data.js"
+    "seed-data:prod": "cross-env NODE_ENV=production node ./src/seedData/seed-data.js",
+    "drop-db": "cross-env NODE_ENV=development node ./src/seedData/drop-db.js",
+    "drop-db:prod": "cross-env NODE_ENV=production node ./src/seedData/drop-db.js"
   },
   "keywords": [],
   "author": "",

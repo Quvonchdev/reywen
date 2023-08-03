@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
 
-const productSchema = new mongoose.Schema({
+const postSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
@@ -14,7 +14,7 @@ const productSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
-	productImages: {
+	postImages: {
 		type: Array,
 		default: [],
 	},
@@ -28,17 +28,17 @@ const productSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'CurrencyType',
 	},
-	price: {
-		type: Number,
-		required: true,
-	},
 	priceType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PriceType',
 		},
 	],
-	paymentType: [
+	price: {
+		type: Number,
+		required: true,
+	},
+	paymentTypes: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PaymentType',
@@ -46,31 +46,85 @@ const productSchema = new mongoose.Schema({
 	],
 	facilities: {
 		type: mongoose.Schema.Types.Mixed,
-		default: [],
+		default: null,
+		required: true,
 	},
 	slug: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
 	},
-	views: {
-		type: Number,
-		default: 0,
+	fullInfo: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
 	},
-	isPopular: {
+	// Address
+	country: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Country',
+	},
+	district: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'District',
+		required: true,
+	},
+	zone: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Zone',
+	},
+	street: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+		required: true,
+	},
+	latitude: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+		required: true,
+	},
+	longitude: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+		required: true,
+	},
+	// Contact
+	contactPhone: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	contactEmail: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	contactAddress: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	socialContacts: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	isContactVisible: {
 		type: Boolean,
 		default: false,
 	},
-	status: {
-		type: Boolean,
-		default: true,
+	// User panel
+	createdByAt: {
+		type: Date,
+		default: Date.now,
 	},
-	expiredFreeModeAt: {
+	createdBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'User',
+		required: true,
+	},
+	updatedAt: {
 		type: Date,
 		default: null,
 	},
-	fullInfo: {
-		type: mongoose.Schema.Types.Mixed,
+	updatedBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'User',
 		default: null,
 	},
 	// Admin panel
@@ -120,33 +174,6 @@ const productSchema = new mongoose.Schema({
 		type: Date,
 		default: null,
 	},
-	isUp: {
-		type: Boolean,
-		default: false,
-	},
-	expiredUpAt: {
-		type: Date,
-		default: null,
-	},
-	// User panel
-	createdByAt: {
-		type: Date,
-		default: Date.now,
-	},
-	createdBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
-		required: true,
-	},
-	updatedAt: {
-		type: Date,
-		default: null,
-	},
-	updatedBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
-		default: null,
-	},
 	// Telegram
 	isSendedTelegram: {
 		type: Boolean,
@@ -165,14 +192,26 @@ const productSchema = new mongoose.Schema({
 		ref: 'User',
 		default: null,
 	},
+	views: {
+		type: Number,
+		default: 0,
+	},
+	isPopular: {
+		type: Boolean,
+		default: false,
+	},
+	status: {
+		type: Boolean,
+		default: true,
+	},
 });
 
-productSchema.pre('validate', function (next) {
+postSchema.pre('validate', function (next) {
 	if (this.name) {
 		this.slug = generateSlag(this.name);
 	}
 	next();
 });
 
-const Product = mongoose.model('Product', productSchema);
-exports.Product = Product;
+const Post = mongoose.model('Post', postSchema);
+exports.Post = Post;

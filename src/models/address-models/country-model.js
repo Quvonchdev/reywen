@@ -1,22 +1,25 @@
 const mongoose = require('mongoose');
 
-const regionSchema = new mongoose.Schema({
+const countrySchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
 	},
-	id: {
-		type: Number,
+	Code: {
+		type: String,
 		default: null,
 	},
-	countryId: {
-		type: Number,
+	phoneCode: {
+		type: String,
 		default: null,
 	},
-	countryObjId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Country',
+	currencyCode: {
+		type: String,
+		default: null,
+	},
+	currencyName: {
+		type: String,
 		default: null,
 	},
 	status: {
@@ -24,7 +27,7 @@ const regionSchema = new mongoose.Schema({
 		default: true,
 	},
 	shortDescription: {
-		type: String,
+		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
 	createdAt: {
@@ -33,5 +36,5 @@ const regionSchema = new mongoose.Schema({
 	},
 });
 
-const Region = mongoose.model('Region', regionSchema);
-exports.Region = Region;
+const Country = mongoose.model('Country', countrySchema);
+exports.Country = Country;
