@@ -1,4 +1,5 @@
-const router = require('./base-router');
+const express = require('express');
+const router = express.Router();
 const error = require('../controllers/error-controller');
 const upload = require('../utils/multer');
 const authRole = require('../middlewares/auth-role-middleware');

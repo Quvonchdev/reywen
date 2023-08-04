@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
 
 const postSchema = new mongoose.Schema({
-	name: {
+	title: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 	},

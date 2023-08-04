@@ -1,10 +1,11 @@
-const router = require('./base-router');
+const express = require('express');
+const router = express.Router();
 const {
 	CurrencyTypes,
 	OperationTypes,
 	PriceTypes,
 	PaymentTypes,
-} = require('../controllers/type-controller');
+} = require('../controllers/post-controller/type-controller');
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
 const isBlockedUser = require('../middlewares/block-user-middleware');

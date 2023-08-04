@@ -1,10 +1,10 @@
-const { CurrencyType } = require('../models/post-models/currency-type-model');
-const { OperationType } = require('../models/post-models/operation-type-model');
-const { PriceType } = require('../models/post-models/price-type-model');
-const { PaymentType } = require('../models/post-models/payment-type-model');
+const { CurrencyType } = require('../../models/post-models/currency-type-model');
+const { OperationType } = require('../../models/post-models/operation-type-model');
+const { PriceType } = require('../../models/post-models/price-type-model');
+const { PaymentType } = require('../../models/post-models/payment-type-model');
 const Joi = require('joi');
-const ReturnResult = require('../helpers/return-result');
-const RedisCache = require('../utils/redis');
+const ReturnResult = require('../../helpers/return-result');
+const RedisCache = require('../../utils/redis');
 
 class CurrencyTypes {
 	static async createCurrencyType(req, res) {

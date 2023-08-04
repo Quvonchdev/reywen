@@ -8,7 +8,6 @@ const zoneSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
-		unique: true,
 	},
 	district_id: {
 		type: Number,
@@ -17,7 +16,7 @@ const zoneSchema = new mongoose.Schema({
 	districtObjId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'District',
-		required: true,
+		default: null,
 	},
 	status: {
 		type: Boolean,

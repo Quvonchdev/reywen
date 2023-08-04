@@ -1,18 +1,23 @@
 const error = require('../routes/error-routes');
 const auth = require('../routes/auth-routes');
 const category = require('../routes/category-routes');
+const address = require('../routes/address-routes');
+const clear = require('../routes/clear-routes');
 const rateLimit = require('../configurations/rate-limiter');
 
 const URL = '/api/v1';
 
 module.exports = (app) => {
 	// Add routes here
-	routes('user', auth);
-	routes('category', category);
-	routes('error', error);
+	routesV1('user', auth);
+	routesV1('category', category);
+	routesV1('error', error);
+	routesV1('address', address);
+	routesV1('clear', clear);
 
 	// function to register routes. Don't touch this
-	function routes(route, router) {
+	// V1 means version 1
+	function routesV1(route, router) {
 		app.use(`${URL}/${route}`, router);
 	}
 };

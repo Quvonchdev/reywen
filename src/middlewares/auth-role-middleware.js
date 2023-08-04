@@ -6,6 +6,7 @@ const {
 	verifyDecodedTokenHasVerifiedAccount,
 	verifyUserData,
 	reqAccessToken,
+	verifyDecodedTokenHasUserRole,
 } = require('./verify-access-token');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const ERROR_MESSAGES = require('./error-messages');
@@ -17,7 +18,7 @@ module.exports = function authRole(req, res, next) {
 	if (!accessToken) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.TOKEN_NOT_FOUND));
 	}
-	
+
 	const decodedToken = verifyAccessToken(accessToken, JWT_SECRET_KEY);
 
 	if (!verifyDecodedTokenExists(decodedToken)) {
@@ -29,6 +30,10 @@ module.exports = function authRole(req, res, next) {
 	}
 
 	if (!verifyDecodedTokenHasUserRoles(decodedToken)) {
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.NO_ACCESS));
+	}
+
+	if (!verifyDecodedTokenHasUserRole(decodedToken)) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.NO_ACCESS));
 	}
 

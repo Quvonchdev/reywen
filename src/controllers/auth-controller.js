@@ -50,356 +50,427 @@ const ERROR_MESSAGES = {
 	PASSWORD_SAME: 'New password must be different from old password',
 };
 
-// we don't need try catch because we are using express-async-errors
-// !-- REGISTER USER --
-exports.register = async (req, res) => {
-	const { error } = validateRegisterSchema(req.body);
+class UserController {
+	static register = async (req, res) => {
+		const { error } = validateRegisterSchema(req.body);
 
-	if (error) {
-		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
-	}
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
 
-	const { fullName, email, phoneNumber, password, confirmPassword, shortDescription } = req.body;
+		const { fullName, email, phoneNumber, password, confirmPassword, shortDescription } = req.body;
 
-	const checkEmail = await User.findOne({
-		email,
-	});
+		const checkEmail = await User.findOne({
+			email,
+		});
 
-	const checkPhoneNumber = await User.findOne({
-		phoneNumber,
-	});
+		const checkPhoneNumber = await User.findOne({
+			phoneNumber,
+		});
 
-	if (checkEmail || checkPhoneNumber) {
-		return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_EXISTS));
-	}
+		if (checkEmail || checkPhoneNumber) {
+			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_EXISTS));
+		}
 
-	if (password !== confirmPassword) {
-		return res
-			.status(400)
-			.json(ReturnResult.errorMessage('Password and Confirm Password must be the same'));
-	}
+		if (password !== confirmPassword) {
+			return res
+				.status(400)
+				.json(ReturnResult.errorMessage('Password and Confirm Password must be the same'));
+		}
 
-	const salt = await bcrypt.genSalt(10);
-	const hashedPassword = await hashPassword(password, salt);
-	const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await hashPassword(password, salt);
+		const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
 
-	const avatar = createAvatar(fullName);
+		const avatar = createAvatar(fullName);
 
-	const user = new User({
-		fullName: fullName,
-		email: email,
-		password: hashedPassword,
-		confirmPassword: hashedConfirmPassword,
-		phoneNumber: phoneNumber,
-		coverImage: avatar,
-		shortDescription: shortDescription,
-	});
+		const user = new User({
+			fullName: fullName,
+			email: email,
+			password: hashedPassword,
+			confirmPassword: hashedConfirmPassword,
+			phoneNumber: phoneNumber,
+			coverImage: avatar,
+			shortDescription: shortDescription,
+		});
 
-	const userFavorites = await UserFavorites.findOne({
-		userId: user._id,
-	});
-
-	if (!userFavorites) {
-		await new UserFavorites({
+		const userFavorites = await UserFavorites.findOne({
 			userId: user._id,
-		}).save();
-	}
+		});
 
-	// save user to database
-	await user.save();
-	// create access code for email verification
-	const verify_code = createVerifyCode();
-	if (verify_code) {
-		// save access code to database
-		await createAndSaveRandomVerifyCode(user._id, verify_code);
-	}
-	// send email verification
-	await sendMail(mailOptions(user, verify_code));
+		if (!userFavorites) {
+			await new UserFavorites({
+				userId: user._id,
+			}).save();
+		}
 
-	const returnData = {
-		_id: user._id,
-		fullName: user.fullName,
-		email: user.email,
-		phoneNumber: user.phoneNumber,
-		coverImage: user.coverImage,
-		isVerified: user.isVerified,
-		shortDescription: user.shortDescription,
-		userRoles: user.userRoles,
+		// save user to database
+		await user.save();
+		// create access code for email verification
+		const verify_code = createVerifyCode();
+		if (verify_code) {
+			// save access code to database
+			await createAndSaveRandomVerifyCode(user._id, verify_code);
+		}
+		// send email verification
+		await sendMail(mailOptions(user, verify_code));
+
+		const returnData = {
+			_id: user._id,
+			fullName: user.fullName,
+			email: user.email,
+			phoneNumber: user.phoneNumber,
+			coverImage: user.coverImage,
+			isVerified: user.isVerified,
+			shortDescription: user.shortDescription,
+			userRoles: user.userRoles,
+		};
+		return res.status(200).json(ReturnResult.success(returnData, SUCCESS_MESSAGES.USER_REGISTERED));
 	};
-	return res.status(200).json(ReturnResult.success(returnData, SUCCESS_MESSAGES.USER_REGISTERED));
-};
 
-// !-- VERIFY ACCOUNT --
-exports.verifyAccount = async (req, res) => {
-	const { error } = validateVerifyAccountSchema(req.body);
+	static verifyAccount = async (req, res) => {
+		const { error } = validateVerifyAccountSchema(req.body);
 
-	if (error) {
-		return res.status(400).send(ReturnResult.returnErrorResult(error, 'Validation error'));
-	}
+		if (error) {
+			return res.status(400).send(ReturnResult.returnErrorResult(error, 'Validation error'));
+		}
 
-	const { verifyCode, userId } = req.body;
+		const { verifyCode, userId } = req.body;
 
-	const verify_code = await VerifyCode.findOne({
-		verifyCode: verifyCode,
-		userId: userId,
-	});
-
-	if (!verify_code) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
-	}
-
-	let currentTime = new Date();
-
-	if (currentTime >= verify_code.expiredAt) {
-		await VerifyCode.deleteMany({
+		const verify_code = await VerifyCode.findOne({
+			verifyCode: verifyCode,
 			userId: userId,
 		});
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_EXPIRED));
-	}
 
-	const user = await User.findOne({
-		_id: userId,
-	});
+		if (!verify_code) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
+		}
 
-	if (!user) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	}
+		let currentTime = new Date();
 
-	user.isVerified = true;
-	await user.save();
-	await VerifyCode.deleteMany({
-		userId: user._id,
-	});
+		if (currentTime >= verify_code.expiredAt) {
+			await VerifyCode.deleteMany({
+				userId: userId,
+			});
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_EXPIRED));
+		}
 
-	return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_VERIFIED));
-};
+		const user = await User.findOne({
+			_id: userId,
+		});
 
-// !-- LOGIN USER --
-exports.login = async (req, res) => {
-	const { error } = validateLoginSchema(req.body);
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
 
-	if (error) {
-		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
-	}
+		user.isVerified = true;
+		await user.save();
+		await VerifyCode.deleteMany({
+			userId: user._id,
+		});
 
-	const { email, password } = req.body;
-
-	const user = await User.findOne({
-		email,
-	});
-
-	if (!user) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	}
-
-	if (!user.isVerified) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_VERIFIED));
-	}
-
-	const isMatch = await bcrypt.compare(password, user.password);
-
-	if (!isMatch) {
-		return res
-			.status(400)
-			.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
-	}
-
-	const ua = req.useragent;
-
-	const userAgents = {
-		user: user._id,
-		ip: req?.ip || null,
-		device: ua?.device || null,
-		os: ua?.os || null,
-		browser: ua?.browser || null,
+		return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_VERIFIED));
 	};
 
-	// save last login time
-	await new UserLog(userAgents).save();
+	static resendVerifyCode = async (req, res) => {
+		const { error } = resendVerifyCodeSchema(req.body);
 
-	const HOUR = 6; // hours
-	const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
 
-	const token = generateJwtToken(user);
+		const { email } = req.body;
 
-	return res.status(200).json(
-		ReturnResult.success(
+		const user = await User.findOne({
+			email: email,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		// delete all verify code of user; because we send new verify code
+		await VerifyCode.deleteMany({
+			userId: user._id,
+		});
+
+		if (user.isVerified) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_VERIFIED));
+		}
+
+		// create access code for email verification
+		const verify_code = createVerifyCode();
+
+		if (verify_code) {
+			// save access code to database
+			await createAndSaveRandomVerifyCode(user._id, verify_code);
+		}
+		// send email verification code
+		await sendMail(mailOptions(user, verify_code));
+		// return success message
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage(SUCCESS_MESSAGES.VERIFICATION_CODE_SENT));
+	};
+
+	static login = async (req, res) => {
+		const { error } = validateLoginSchema(req.body);
+
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { email, password } = req.body;
+
+		const user = await User.findOne({
+			email,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		if (!user.isVerified) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_VERIFIED));
+		}
+
+		const isMatch = await bcrypt.compare(password, user.password);
+
+		if (!isMatch) {
+			return res
+				.status(400)
+				.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
+		}
+
+		const ua = req.useragent;
+
+		const userAgents = {
+			user: user._id,
+			ip: req?.ip || null,
+			device: ua?.device || null,
+			os: ua?.os || null,
+			browser: ua?.browser || null,
+		};
+
+		// save last login time
+		await new UserLog(userAgents).save();
+
+		const HOUR = 6; // hours
+		const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
+
+		const token = generateJwtToken(user);
+
+		return res.status(200).json(
+			ReturnResult.success(
+				{
+					token: {
+						accessToken: token,
+						token_type: 'Bearer',
+						expires_in: HOUR * 60 * 60,
+						expires_in_type: 'seconds',
+						expired_at: expiredAt,
+						expired_at_type: 'milliseconds',
+					},
+					user: {
+						_id: user._id,
+						fullName: user.fullName,
+						email: user.email,
+						phoneNumber: user.phoneNumber,
+						coverImage: user.coverImage,
+						isVerified: user.isVerified,
+						shortDescription: user.shortDescription,
+					},
+				},
+				SUCCESS_MESSAGES.USER_LOGGED_IN
+			)
+		);
+	};
+
+	static resetPassword = async (req, res) => {
+		const { error } = validateResetPasswordSchema(req.body);
+
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { email, password, confirmPassword, verifyCode } = req.body;
+
+		const user = await User.findOne({
+			email: email,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const matchPassword = await bcrypt.compare(password, user.password);
+		const matchConfirmPassword = await bcrypt.compare(confirmPassword, user.password);
+
+		if (matchPassword || matchConfirmPassword) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
+		}
+
+		const verify_code = await VerifyCode.findOne({
+			verifyCode: verifyCode,
+			userId: user._id,
+		});
+
+		if (!verify_code) {
+			return res.status(400).send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
+		}
+
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await hashPassword(password, salt);
+		const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
+
+		await User.updateOne(
 			{
-				token: {
-					accessToken: token,
-					token_type: 'Bearer',
-					expires_in: HOUR * 60 * 60,
-					expires_in_type: 'seconds',
-					expired_at: expiredAt,
-					expired_at_type: 'milliseconds',
-				},
-				user: {
-					_id: user._id,
-					fullName: user.fullName,
-					email: user.email,
-					phoneNumber: user.phoneNumber,
-					coverImage: user.coverImage,
-					isVerified: user.isVerified,
-					shortDescription: user.shortDescription,
-				},
+				_id: user._id,
 			},
-			SUCCESS_MESSAGES.USER_LOGGED_IN
-		)
-	);
-};
+			{
+				password: hashedPassword,
+				confirmPassword: hashedConfirmPassword,
+			}
+		);
 
-// !-- RESEND VERIFICATION CODE --
-exports.resendVerifyCode = async (req, res) => {
-	const { error } = resendVerifyCodeSchema(req.body);
+		await VerifyCode.deleteMany({
+			userId: user._id,
+		});
 
-	if (error) {
-		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
-	}
+		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_RESET));
+	};
 
-	const { email } = req.body;
+	static changePassword = async (req, res) => {
+		const { error } = validateChangePasswordSchema(req.body);
 
-	const user = await User.findOne({
-		email: email,
-	});
-
-	if (!user) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	}
-
-	// delete all verify code of user; because we send new verify code
-	await VerifyCode.deleteMany({
-		userId: user._id,
-	});
-
-	if (user.isVerified) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_VERIFIED));
-	}
-
-	// create access code for email verification
-	const verify_code = createVerifyCode();
-
-	if (verify_code) {
-		// save access code to database
-		await createAndSaveRandomVerifyCode(user._id, verify_code);
-	}
-	// send email verification code
-	await sendMail(mailOptions(user, verify_code));
-	// return success message
-	return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.VERIFICATION_CODE_SENT));
-};
-
-// !-- RESET PASSWORD --
-exports.resetPassword = async (req, res) => {
-	const { error } = validateResetPasswordSchema(req.body);
-
-	if (error) {
-		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
-	}
-
-	const { email, password, confirmPassword, verifyCode } = req.body;
-
-	const user = await User.findOne({
-		email: email,
-	});
-
-	if (!user) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	}
-
-	const matchPassword = await bcrypt.compare(password, user.password);
-	const matchConfirmPassword = await bcrypt.compare(confirmPassword, user.password);
-
-	if (matchPassword || matchConfirmPassword) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
-	}
-
-	const verify_code = await VerifyCode.findOne({
-		verifyCode: verifyCode,
-		userId: user._id,
-	});
-
-	if (!verify_code) {
-		return res.status(400).send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
-	}
-
-	const salt = await bcrypt.genSalt(10);
-	const hashedPassword = await hashPassword(password, salt);
-	const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
-
-	await User.updateOne(
-		{
-			_id: user._id,
-		},
-		{
-			password: hashedPassword,
-			confirmPassword: hashedConfirmPassword,
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
-	);
 
-	await VerifyCode.deleteMany({
-		userId: user._id,
-	});
+		const { userId, oldPassword, newPassword, confirmNewPassword } = req.body;
 
-	return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_RESET));
-};
+		const user = await User.findOne({
+			_id: userId,
+		});
 
-// !-- CHANGE PASSWORD --
-exports.changePassword = async (req, res) => {
-	const { error } = validateChangePasswordSchema(req.body);
-
-	if (error) {
-		return res.status(400).send(ReturnResult.error(error, 'Validation error'));
-	}
-
-	const { userId, oldPassword, newPassword, confirmNewPassword } = req.body;
-
-	const user = await User.findOne({
-		_id: userId,
-	});
-
-	if (!user) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-	}
-
-	const matchOldPassword = await bcrypt.compare(oldPassword, user.password);
-
-	if (!matchOldPassword) {
-		return res
-			.status(400)
-			.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
-	}
-
-	const matchNewPassword = await bcrypt.compare(newPassword, user.password);
-
-	if (matchNewPassword) {
-		return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
-	}
-
-	if (newPassword !== confirmNewPassword) {
-		return res
-			.status(400)
-			.send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
-	}
-
-	const salt = await bcrypt.genSalt(10);
-	const hashedPassword = await hashPassword(newPassword, salt);
-	const hashedConfirmPassword = await hashPassword(confirmNewPassword, salt);
-
-	await User.updateOne(
-		{
-			_id: user._id,
-		},
-		{
-			password: hashedPassword,
-			confirmPassword: hashedConfirmPassword,
-		},
-		{
-			new: true,
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
-	);
 
-	return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
-};
+		const matchOldPassword = await bcrypt.compare(oldPassword, user.password);
+
+		if (!matchOldPassword) {
+			return res
+				.status(400)
+				.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
+		}
+
+		const matchNewPassword = await bcrypt.compare(newPassword, user.password);
+
+		if (matchNewPassword) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
+		}
+
+		if (newPassword !== confirmNewPassword) {
+			return res
+				.status(400)
+				.send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
+		}
+
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await hashPassword(newPassword, salt);
+		const hashedConfirmPassword = await hashPassword(confirmNewPassword, salt);
+
+		await User.updateOne(
+			{
+				_id: user._id,
+			},
+			{
+				password: hashedPassword,
+				confirmPassword: hashedConfirmPassword,
+			},
+			{
+				new: true,
+			}
+		);
+
+		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
+	};
+
+	static getUserLogs = async (req, res) => {
+		const { userId } = req.params;
+
+		const user = await User.findOne({
+			_id: userId,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const logs = await UserLog.find({
+			user: user._id,
+		});
+
+		return res.status(200).json(ReturnResult.success(logs, 'user logs fetched successfully'));
+	};
+
+	static getUser = async (req, res) => {
+		const { userId } = req.params;
+
+		const user = await User.findOne({
+			_id: userId,
+		}).select('-password -confirmPassword');
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		return res.status(200).json(ReturnResult.success(user, 'user fetched successfully'));
+	};
+
+	static getAllUsers = async (req, res) => {
+		const users = await User.find({}).select('-password -confirmPassword');
+
+		return res.status(200).json(ReturnResult.success(users, 'users fetched successfully'));
+	};
+
+	static updateUser = async (req, res) => {
+		const { error } = validateUpdateUserSchema(req.body);
+
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { userId } = req.params;
+
+		const { fullName, phoneNumber, shortDescription } = req.body;
+
+		const user = await User.findOne({
+			_id: userId,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		await User.updateOne(
+			{
+				_id: userId,
+			},
+			{
+				fullName: fullName,
+				shortDescription: shortDescription,
+				phoneNumber: phoneNumber,
+			},
+			{
+				new: true,
+			}
+		);
+
+		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_UPDATED));
+	};
+}
 
 // VALIDATIONS
 function validateRegisterSchema(reqBody) {
@@ -463,6 +534,17 @@ function validateChangePasswordSchema(reqBody) {
 	return schema.validate(reqBody);
 }
 
+function validateUpdateUserSchema(reqBody) {
+	const schema = joi.object({
+		userId: joi.string().required(),
+		fullName: joi.string().min(3).max(30).required(),
+		phoneNumber: joi.string().min(10).max(15).required(),
+		shortDescription: joi.string().max(500).optional(),
+	});
+
+	return schema.validate(reqBody);
+}
+
 // EMAIL DATA
 function mailOptions(user, verificationCode) {
 	return {
@@ -520,3 +602,5 @@ function generateJwtToken(user) {
 		}
 	);
 }
+
+module.exports = UserController;

@@ -4,7 +4,7 @@ const {
 	verifyUserIsBlocked,
 	verifyUserData,
 	reqAccessToken,
-	verifyDecodedTokenExists
+	verifyDecodedTokenExists,
 } = require('./verify-access-token');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const ERROR_MESSAGES = require('./error-messages');

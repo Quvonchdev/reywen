@@ -10,10 +10,6 @@ const regionSchema = new mongoose.Schema({
 		type: Number,
 		default: null,
 	},
-	countryId: {
-		type: Number,
-		default: null,
-	},
 	countryObjId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Country',

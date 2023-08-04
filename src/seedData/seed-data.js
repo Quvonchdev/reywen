@@ -106,9 +106,9 @@ async function seedZones() {
 
 			let districts = await District.find({});
 			zones.forEach((zone) => {
-				districts.forEach((ds) => {
-					if (ds.id === zone.district_id) {
-						zone.districtObjId = ds._id;
+				districts.forEach((district) => {
+					if (district.id === zone.district_id) {
+						zone.districtObjId = district._id;
 					}
 				});
 			});

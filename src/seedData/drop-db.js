@@ -7,15 +7,13 @@ const mongodbConnection = require('../connections/mongodb-connection');
 (async () => {
 	await mongodbConnection();
 	// it is very dangerous to drop all collections
-	// await dropAllCollections();
+	await dropAllCollections();
 
 	// await  dropRegionsCollection();
 	// await  dropDistrictsCollection();
 	// await  dropZonesCollection();
 	// await  dropUsersCollection();
 	// await  dropVerifyCodesCollection();
-
-	process.exit(0);
 })();
 
 async function dropRegionsCollection() {

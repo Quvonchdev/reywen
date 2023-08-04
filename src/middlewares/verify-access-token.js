@@ -40,7 +40,14 @@ function verifyUserIsBlocked(decodedToken) {
 }
 
 function verifyDecodedTokenHasUserRoles(decodedToken) {
-	if (!decodedToken.userRoles) {
+	if (!decodedToken.userRoles || decodedToken.userRoles.length === 0) {
+		return false;
+	}
+	return true;
+}
+
+function verifyDecodedTokenHasUserRole(decodedToken) {
+	if (!decodedToken.userRoles.includes('User')) {
 		return false;
 	}
 	return true;
@@ -78,4 +85,5 @@ module.exports = {
 	verifyDecodedTokenHasManagerRole,
 	verifyDecodedTokenHasVerifiedAccount,
 	verifyUserIsBlocked,
+	verifyDecodedTokenHasUserRole,
 };

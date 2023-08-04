@@ -1,10 +1,12 @@
-const router = require('./base-router');
-const Category = require('../controllers/category-controller');
+const express = require('express');
+const router = express.Router();
+const Category = require('../controllers/post-controller/category-controller');
 const rateLimit = require('../configurations/rate-limiter');
 const upload = require('../utils/multer');
 const authRole = require('../middlewares/auth-role-middleware');
 const isBlockedUser = require('../middlewares/block-user-middleware');
 const adminRole = require('../middlewares/admin-role-middleware');
+
 const commonMiddleware = [authRole, isBlockedUser, adminRole, rateLimit(25, 1)];
 
 // for UI
