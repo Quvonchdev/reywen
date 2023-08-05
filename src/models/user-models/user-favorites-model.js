@@ -9,10 +9,10 @@ const userSchema = new mongoose.Schema({
 			ref: 'Category',
 		},
 	],
-	productFavorites: [
+	postFavorites: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Product',
+			ref: 'Post',
 		},
 	],
 	userId: {

@@ -43,6 +43,7 @@ const MESSAGES = {
 class CountryController {
 	static getCountries = async (req, res) => {
 		const cachedCountries = await RedisCache.get('countries');
+		
 		if (cachedCountries) {
 			return res
 				.status(200)
@@ -362,12 +363,12 @@ class DistrictController {
 
 		const districts = await District.find({ regionObjId: regionId }).populate('regionObjId');
 
-		if(districts.length > 0) {
+		if (districts.length > 0) {
 			await RedisCache.set(`districts-${regionId}`, JSON.stringify(districts));
 		}
-		
+
 		return res.status(200).json(ReturnResult.success(districts, MESSAGES.DISTRICTS_FETCHED));
-	}
+	};
 
 	static createDistrict = async (req, res) => {
 		const { error } = validateDistrict(req.body);
@@ -451,16 +452,7 @@ class DistrictController {
 
 class ZoneController {
 	static getZones = async (req, res) => {
-		const cachedZones = await RedisCache.get('zones');
-
-		if (cachedZones) {
-			return res.status(200).json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
-		}
-
 		const zones = await Zone.find().populate('districtObjId');
-		if(zones.length > 0){
-			await RedisCache.set('zones', JSON.stringify(zones));
-		}
 		return res.status(200).json(ReturnResult.success(zones, MESSAGES.ZONES_FETCHED));
 	};
 
@@ -474,7 +466,9 @@ class ZoneController {
 		const cachedZones = await RedisCache.get(`zones-${options.page}-${options.limit}`);
 
 		if (cachedZones) {
-			return res.status(200).json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
+			return res
+				.status(200)
+				.json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
 		}
 
 		const zones = await Zone.find()
@@ -493,7 +487,9 @@ class ZoneController {
 		const cachedZone = await RedisCache.get(`zone-${zoneId}`);
 
 		if (cachedZone) {
-			return res.status(200).json(ReturnResult.success(JSON.parse(cachedZone), MESSAGES.ZONE_FETCHED, true));
+			return res
+				.status(200)
+				.json(ReturnResult.success(JSON.parse(cachedZone), MESSAGES.ZONE_FETCHED, true));
 		}
 
 		const zone = await Zone.findById(zoneId).populate('districtObjId');
@@ -511,7 +507,9 @@ class ZoneController {
 		const cachedZones = await RedisCache.get(`zones-${districtId}`);
 
 		if (cachedZones) {
-			return res.status(200).json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
+			return res
+				.status(200)
+				.json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
 		}
 
 		const zones = await Zone.find({ districtObjId: districtId }).populate('districtObjId');
@@ -521,7 +519,7 @@ class ZoneController {
 		}
 
 		return res.status(200).json(ReturnResult.success(zones, MESSAGES.ZONES_FETCHED));
-	}
+	};
 
 	static createZone = async (req, res) => {
 		const { error } = validateZone(req.body);

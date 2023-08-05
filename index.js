@@ -8,7 +8,6 @@ const internalError = require('./src/errors/internal-server');
 const invalidRoute = require('./src/errors/invalid-routes');
 
 const launchAppExtensions = require('./src/extensions/launch-extension');
-
 // You dont have to use try catch block for async functions
 // This package will handle it for you
 require('express-async-errors');

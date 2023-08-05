@@ -9,15 +9,6 @@
         "name": "SuperAdmin"
     },
     {
-        "name": "Guest"
-    },
-    {
-        "name": "Moderator"
-    },
-    {
-        "name": "Editor"
-    },
-    {
         "name": "Manager"
     }
 ]

@@ -2,6 +2,7 @@ const { User } = require('../models/user-models/user-model');
 const ReturnResult = require('../helpers/return-result');
 const { VerifyCode } = require('../models/user-models/verify-user-model');
 const { UserLog } = require('../models/user-models/user-logs-model');
+const { UserRole } = require('../models/user-models/user-role');
 const { emailTemplate } = require('../configurations/mail-template');
 const { sendMail } = require('../utils/mail');
 const envSecretsConfig = require('../configurations/env-secrets-config');
@@ -11,6 +12,7 @@ const bcrypt = require('bcrypt');
 const joi = require('joi');
 const jwt = require('jsonwebtoken');
 const randomstring = require('randomstring');
+const RedisCache = require('../utils/redis');
 
 const SUCCESS_MESSAGES = {
 	USER_REGISTERED: 'User registered successfully. Please verify your account!',
@@ -135,7 +137,8 @@ class UserController {
 			return res.status(400).send(ReturnResult.returnErrorResult(error, 'Validation error'));
 		}
 
-		const { verifyCode, userId } = req.body;
+		const { userId } = req.params;
+		const { verifyCode } = req.body;
 
 		const verify_code = await VerifyCode.findOne({
 			verifyCode: verifyCode,
@@ -146,7 +149,7 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
 		}
 
-		let currentTime = new Date();
+		let currentTime = Date.now();
 
 		if (currentTime >= verify_code.expiredAt) {
 			await VerifyCode.deleteMany({
@@ -166,7 +169,7 @@ class UserController {
 		user.isVerified = true;
 		await user.save();
 		await VerifyCode.deleteMany({
-			userId: user._id,
+			userId: userId,
 		});
 
 		return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_VERIFIED));
@@ -415,7 +418,7 @@ class UserController {
 		return res.status(200).json(ReturnResult.success(logs, 'user logs fetched successfully'));
 	};
 
-	static getUser = async (req, res) => {
+	static getUserProfile = async (req, res) => {
 		const { userId } = req.params;
 
 		const user = await User.findOne({
@@ -426,7 +429,29 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		return res.status(200).json(ReturnResult.success(user, 'user fetched successfully'));
+		const userFavorites = await UserFavorites.findOne({ userId: userId }).select(
+			'-_id -userId -__v'
+		).populate('categoryFavorites', ['_id','name', 'slug', 'coverImage']);
+
+		const result = {
+			profile: user,
+			userFavorites: null,
+		};
+
+		if (userFavorites) {
+			result.userFavorites = userFavorites;
+		} else {
+			const usrFavorite = new UserFavorites({
+				userId: user._id,
+			});
+			await usrFavorite.save();
+			result.userFavorites = {
+				categoryFavorites: usrFavorite.categoryFavorites,
+				postFavorites: usrFavorite.postFavorites,
+			};
+		}
+
+		return res.status(200).json(ReturnResult.success(result, 'user fetched successfully'));
 	};
 
 	static getAllUsers = async (req, res) => {
@@ -439,7 +464,7 @@ class UserController {
 		const { error } = validateUpdateUserSchema(req.body);
 
 		if (error) {
-			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
 		}
 
 		const { userId } = req.params;
@@ -470,6 +495,244 @@ class UserController {
 
 		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_UPDATED));
 	};
+
+	static getUserRoles = async (req, res) => {
+		const cachedUserRoles = await RedisCache.get('user-roles');
+
+		if (cachedUserRoles) {
+			return res
+				.status(200)
+				.json(
+					ReturnResult.success(JSON.parse(cachedUserRoles), 'User Roles fetched successfully', true)
+				);
+		}
+
+		const userRoles = await UserRole.find({});
+		await RedisCache.set('user-roles', JSON.stringify(userRoles));
+		return res.status(200).json(ReturnResult.success(userRoles, 'User Roles fetched successfully'));
+	};
+
+	static updateUserFavoritesCategory = async (req, res) => {
+		const { error } = validateUserFavoritesCategorySchema(req.body);
+
+		if (error) {
+			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { userId } = req.params;
+		const { categoryFavorites } = req.body;
+
+		const checkUser = await User.findById(userId);
+
+		if (!checkUser) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const findFavorites = await UserFavorites.findOne({ userId });
+		const checkCategoryExist = await UserFavorites.findOne({
+			categoryFavorites: { $in: categoryFavorites },
+		});
+
+		if (checkCategoryExist) {
+			return res
+				.status(400)
+				.json(ReturnResult.errorMessage('Category already exist in your favorites!'));
+		}
+
+		if (!findFavorites) {
+			const favorites = new UserFavorites({
+				userId,
+			});
+
+			await favorites.save();
+
+			const updateUserFavorite = await UserFavorites.findByIdAndUpdate(
+				favorites._id,
+				{
+					$push: { categoryFavorites: categoryFavorites },
+				},
+				{
+					new: true,
+				}
+			);
+
+			await updateUserFavorite.save();
+
+			return res
+				.status(200)
+				.json(ReturnResult.successMessage('Category successfully added to your favorites! 🌟'));
+		}
+
+		const addCategoryUserFavorites = await UserFavorites.findByIdAndUpdate(
+			findFavorites._id,
+			{
+				$push: { categoryFavorites: categoryFavorites },
+			},
+			{
+				new: true,
+			}
+		);
+
+		await addCategoryUserFavorites.save();
+
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage('Category successfully added to your favorites! 🌟'));
+	};
+
+	static updateUserFavoritesPost = async (req, res) => {
+		const { error } = validateUserFavoritesPostSchema(req.body);
+
+		if (error) {
+			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { userId } = req.params;
+		const { favoritePost } = req.body;
+
+		const checkUser = await User.findById(userId);
+
+		if (!checkUser) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const favorites = await UserFavorites.findOne({ userId });
+		const checkPostExist = await UserFavorites.findOne({
+			postFavorites: { $in: favoritePost },
+		})
+
+		if (checkPostExist) {
+			return res
+				.status(400)
+				.json(ReturnResult.errorMessage('Product already exist in your favorites!'));
+		}
+
+		if (!favorites) {
+			const userFavorites = new UserFavorites({
+				userId,
+			});
+
+			await userFavorites.save();
+
+			const updateUserFavorites = await UserFavorites.findByIdAndUpdate(
+				userFavorites._id,
+				{
+					$push: { postFavorites: favoritePost },
+				},
+				{
+					new: true,
+				}
+			);
+
+			await updateUserFavorites.save();
+
+			return res
+				.status(200)
+				.json(ReturnResult.successMessage('Product successfully added to your favorites! 🌟'));
+		}
+
+		const addProductUserFavorites = await UserFavorites.findByIdAndUpdate(
+			favorites._id,
+			{
+				$push: { postFavorites: favoritePost },
+			},
+			{
+				new: true,
+			}
+		);
+
+		await addProductUserFavorites.save();
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage('Product successfully added to your favorites! 🌟'));
+	};
+
+	static getUserFavorites = async (req, res) => {
+		const { userId } = req.params;
+
+		const USER = await User.findById(userId);
+
+		if (!USER) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const favorites = await UserFavorites.findOne({ userId }).populate('categoryFavorites', [
+			'_id',
+			'name',
+			'shortDescription',
+			'coverImage',
+			'slug',
+		])
+
+		if (!favorites) {
+			return res.status(200).json(ReturnResult.success([], "User doesn't have any favorites yet!"));
+		}
+
+		return res
+			.status(200)
+			.json(ReturnResult.success(favorites, 'User favorites fetched successfully'));
+	};
+
+	static removeUserFavoritesCategory = async (req, res) => {
+		const { error } = validateUserFavoritesCategorySchema(req.body);
+
+		if (error) {
+			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { userId } = req.params;
+		const { categoryFavorites } = req.body;
+
+		const user = await User.findById(userId);
+		
+		if(!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const favorite = await UserFavorites.findOne({ userId, categoryFavorites });
+
+		if (!favorite) {
+			return res.status(404).json(ReturnResult.errorMessage('Category not found in your favorites!'));
+		}
+
+		const categoryFavorite = await UserFavorites.findByIdAndUpdate(favorite._id, {
+			$pull: { categoryFavorites: categoryFavorites },
+		});
+
+		await categoryFavorite.save();
+
+		return res.status(200).json(ReturnResult.successMessage('Category successfully removed from your favorites!'));
+	}
+
+	static removeUserFavoritesPost = async (req, res) => {
+		const { error }  = validateUserFavoritesPostSchema(req.body);
+
+		if (error) {
+			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { userId } = req.params;
+		const { postFavorites } = req.body;
+
+		const user = await User.findById(userId);
+
+		if(!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const favorite = await UserFavorites.findOne({ userId, postFavorites });
+
+		if (!favorite) {
+			return res.status(404).json(ReturnResult.errorMessage('Product not found in your favorites!'));
+		}
+
+		const postFavorite = await UserFavorites.findByIdAndUpdate(favorite._id, {
+			$pull: { postFavorites: postFavorites },
+		});
+
+		await postFavorite.save();
+		return res.status(200).json(ReturnResult.successMessage('Product successfully removed from your favorites!'));
+	}
 }
 
 // VALIDATIONS
@@ -488,8 +751,7 @@ function validateRegisterSchema(reqBody) {
 
 function validateVerifyAccountSchema(reqBody) {
 	const schema = joi.object({
-		verifyCode: joi.number().required(),
-		userId: joi.string().required(),
+		verifyCode: joi.number().required()
 	});
 
 	return schema.validate(reqBody);
@@ -540,6 +802,22 @@ function validateUpdateUserSchema(reqBody) {
 		fullName: joi.string().min(3).max(30).required(),
 		phoneNumber: joi.string().min(10).max(15).required(),
 		shortDescription: joi.string().max(500).optional(),
+	});
+
+	return schema.validate(reqBody);
+}
+
+function validateUserFavoritesCategorySchema(reqBody) {
+	const schema = joi.object({
+		categoryFavorites: joi.string().required(),
+	});
+
+	return schema.validate(reqBody);
+}
+
+function validateUserFavoritesPostSchema(reqBody) {
+	const schema = joi.object({
+		postFavorites: joi.string().required(),
 	});
 
 	return schema.validate(reqBody);

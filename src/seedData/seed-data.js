@@ -218,6 +218,7 @@ async function seedPaymentTypes() {
 // also it doesn't recommend to do it. After seeding data, don't do it again.
 // because it will delete all data and insert again!
 // to run: npm run seed-data
+// before run: uncomment the function you want to run
 
 // seedCountries();
 // seedRegions();

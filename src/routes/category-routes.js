@@ -7,7 +7,8 @@ const authRole = require('../middlewares/auth-role-middleware');
 const isBlockedUser = require('../middlewares/block-user-middleware');
 const adminRole = require('../middlewares/admin-role-middleware');
 
-const commonMiddleware = [authRole, isBlockedUser, adminRole, rateLimit(25, 1)];
+// authRole, isBlockedUser, adminRole, rateLimit(25, 1)
+const commonMiddleware = [];
 
 // for UI
 router.get('/', rateLimit(30, 2), Category.getCategoriesByPagination);

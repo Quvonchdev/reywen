@@ -3,9 +3,10 @@ const auth = require('../routes/auth-routes');
 const category = require('../routes/category-routes');
 const address = require('../routes/address-routes');
 const clear = require('../routes/clear-routes');
+const types = require('../routes/type-routes');
 const rateLimit = require('../configurations/rate-limiter');
 
-const URL = '/api/v1';
+const URL_VERSION_1 = '/api/v1';
 
 module.exports = (app) => {
 	// Add routes here
@@ -14,10 +15,11 @@ module.exports = (app) => {
 	routesV1('error', error);
 	routesV1('address', address);
 	routesV1('clear', clear);
+	routesV1('types', types);
 
 	// function to register routes. Don't touch this
 	// V1 means version 1
 	function routesV1(route, router) {
-		app.use(`${URL}/${route}`, router);
+		app.use(`${URL_VERSION_1}/${route}`, router);
 	}
 };

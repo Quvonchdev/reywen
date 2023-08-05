@@ -25,7 +25,7 @@ router.get('/zones', middleware, ZoneController.getZonesPaginated);
 
 router.get('/countries/:countryId', middleware, CountryController.getCountry);
 router.get('/regions/:regionId', middleware, RegionController.getRegion);
-router.get('/:regionId/districts', middleware, DistrictController.getDistrictByRegion)
+router.get('/:regionId/districts', middleware, DistrictController.getDistrictByRegion);
 router.get('/districts/:districtId', middleware, DistrictController.getDistrict);
 router.get('/zones/:zoneId', middleware, ZoneController.getZone);
 router.get('/:districtId/zones', middleware, ZoneController.getZonesByDistrict);
