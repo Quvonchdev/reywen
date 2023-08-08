@@ -18,8 +18,7 @@ module.exports = (app) => {
 	routesV1('types', types);
 
 	// function to register routes. Don't touch this
-	// V1 means version 1
-	function routesV1(route, router) {
-		app.use(`${URL_VERSION_1}/${route}`, router);
+	function routesV1(route, router, middleware = []) {
+		app.use(`${URL_VERSION_1}/${route}`, middleware, router);
 	}
 };

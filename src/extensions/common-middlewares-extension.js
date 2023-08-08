@@ -5,17 +5,32 @@ const responseTime = require('response-time');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 
 module.exports = (app) => {
-	app.use(bodyParser.json()); // Parse application/json
-	app.use(bodyParser.urlencoded({ extended: true })); // Parse application/x-www-form-urlencoded
+	// Parse application/json
+	app.use(
+		bodyParser.json({
+			limit: '50mb',
+		})
+	);
+
+	// Parse application/x-www-form-urlencoded
+	app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 1000000 }));
+
 	if (envSecretsConfig.NODE_ENV === 'development') {
-		app.use(morgan('dev')); // Log requests to console
+		// Log requests to console
+		app.use(morgan('dev'));
 	}
+
+	// Compress response bodies
 	app.use(
 		compression({
 			threshold: 0,
 			level: 9,
 			memLevel: 9,
 		})
-	); // Compress response bodies
-	app.use(responseTime()); // Add X-Response-Time header
+	);
+
+	// Add X-Response-Time header
+	app.use(responseTime());
+	// Disable X-Powered-By header: Express
+	app.disable('x-powered-by');
 };

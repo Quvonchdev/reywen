@@ -23,10 +23,7 @@ module.exports = (app) => {
 			.catch((err) => {
 				console.log('❌ Telegram Bot Error: ', err.message);
 			});
-
-
 	});
-
 
 	// Handle unhandled promise rejections
 	process.on('unhandledRejection', (err) => {

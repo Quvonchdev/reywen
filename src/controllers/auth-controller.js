@@ -429,9 +429,9 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const userFavorites = await UserFavorites.findOne({ userId: userId }).select(
-			'-_id -userId -__v'
-		).populate('categoryFavorites', ['_id','name', 'slug', 'coverImage']);
+		const userFavorites = await UserFavorites.findOne({ userId: userId })
+			.select('-_id -userId -__v')
+			.populate('categoryFavorites', ['_id', 'name', 'slug', 'coverImage']);
 
 		const result = {
 			profile: user,
@@ -599,7 +599,7 @@ class UserController {
 		const favorites = await UserFavorites.findOne({ userId });
 		const checkPostExist = await UserFavorites.findOne({
 			postFavorites: { $in: favoritePost },
-		})
+		});
 
 		if (checkPostExist) {
 			return res
@@ -662,7 +662,7 @@ class UserController {
 			'shortDescription',
 			'coverImage',
 			'slug',
-		])
+		]);
 
 		if (!favorites) {
 			return res.status(200).json(ReturnResult.success([], "User doesn't have any favorites yet!"));
@@ -684,15 +684,17 @@ class UserController {
 		const { categoryFavorites } = req.body;
 
 		const user = await User.findById(userId);
-		
-		if(!user) {
+
+		if (!user) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
 		const favorite = await UserFavorites.findOne({ userId, categoryFavorites });
 
 		if (!favorite) {
-			return res.status(404).json(ReturnResult.errorMessage('Category not found in your favorites!'));
+			return res
+				.status(404)
+				.json(ReturnResult.errorMessage('Category not found in your favorites!'));
 		}
 
 		const categoryFavorite = await UserFavorites.findByIdAndUpdate(favorite._id, {
@@ -701,11 +703,13 @@ class UserController {
 
 		await categoryFavorite.save();
 
-		return res.status(200).json(ReturnResult.successMessage('Category successfully removed from your favorites!'));
-	}
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage('Category successfully removed from your favorites!'));
+	};
 
 	static removeUserFavoritesPost = async (req, res) => {
-		const { error }  = validateUserFavoritesPostSchema(req.body);
+		const { error } = validateUserFavoritesPostSchema(req.body);
 
 		if (error) {
 			return res.status(400).json(ReturnResult.error(error, 'Validation error'));
@@ -716,14 +720,16 @@ class UserController {
 
 		const user = await User.findById(userId);
 
-		if(!user) {
+		if (!user) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
 		const favorite = await UserFavorites.findOne({ userId, postFavorites });
 
 		if (!favorite) {
-			return res.status(404).json(ReturnResult.errorMessage('Product not found in your favorites!'));
+			return res
+				.status(404)
+				.json(ReturnResult.errorMessage('Product not found in your favorites!'));
 		}
 
 		const postFavorite = await UserFavorites.findByIdAndUpdate(favorite._id, {
@@ -731,8 +737,10 @@ class UserController {
 		});
 
 		await postFavorite.save();
-		return res.status(200).json(ReturnResult.successMessage('Product successfully removed from your favorites!'));
-	}
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage('Product successfully removed from your favorites!'));
+	};
 }
 
 // VALIDATIONS
@@ -751,7 +759,7 @@ function validateRegisterSchema(reqBody) {
 
 function validateVerifyAccountSchema(reqBody) {
 	const schema = joi.object({
-		verifyCode: joi.number().required()
+		verifyCode: joi.number().required(),
 	});
 
 	return schema.validate(reqBody);

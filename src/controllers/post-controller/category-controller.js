@@ -4,6 +4,9 @@ const { User } = require('../../models/user-models/user-model');
 const Cloudinary = require('../../utils/cloudinary');
 const ReturnResult = require('../../helpers/return-result');
 const RedisCache = require('../../utils/redis');
+const path = require('path');
+const fs = require('fs');
+const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 
 const SUCCESS_MESSAGES = {
 	CATEGORY_CREATED: 'Category created successfully',
@@ -31,11 +34,14 @@ const ERROR_MESSAGES = {
 	CATEGORIES_NOT_FOUND: 'Categories not found. Please check your category ids',
 };
 
+const UPLOADED_IMAGE_PATH = '../../../public/images';
+
 class CategoryController {
 	static createCategory = async (req, res) => {
 		const { error } = validateCreateCategory(req.body);
 
 		if (error) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
 		}
 
@@ -44,43 +50,23 @@ class CategoryController {
 		const user = await User.findById(createdBy);
 
 		if (!user) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
 		const category = await Category.findOne({ name: name });
 
 		if (category) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.error(ERROR_MESSAGES.CATEGORY_NAME_EXISTS));
 		}
 
-		let coverImage = null;
-		let coverImageFullData = null;
-
-		if (req.file) {
-			const resultUploadedImage = await Cloudinary.uploadFile(req.file).then((result) => {
-				return result;
-			});
-
-			if (resultUploadedImage.error) {
-				return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_CREATED));
-			}
-
-			coverImageFullData = resultUploadedImage.data;
-
-			const { width, height, secure_url } = resultUploadedImage.data;
-
-			coverImage = {
-				width,
-				height,
-				secure_url,
-			};
-		}
+		let coverImage = req.file ? path.basename(req.file.path) : null;
 
 		const newCategory = new Category({
 			name: name,
 			shortDescription: shortDescription,
 			coverImage: coverImage,
-			coverImageFullData: coverImageFullData,
 			createdBy: createdBy,
 		});
 
@@ -95,6 +81,7 @@ class CategoryController {
 		const { error } = validateUpdateCategory(req.body);
 
 		if (error) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
 		}
 
@@ -104,6 +91,7 @@ class CategoryController {
 		const user = await User.findById(updatedBy);
 
 		if (!user) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
@@ -112,60 +100,24 @@ class CategoryController {
 		const categoryName = await Category.findOne({ name: name });
 
 		if (!category) {
+			removeFile(req)
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
 		}
 
 		if (categoryName) {
+			removeFile(req)
 			return res.status(400).json(ReturnResult.error(ERROR_MESSAGES.CATEGORY_NAME_EXISTS));
 		}
 
 		let coverImage = category.coverImage;
-		let coverImageFullData = category.coverImageFullData;
 
 		if (req.file) {
-			if (typeof category.coverImageFullData === 'object' && category.coverImageFullData !== null) {
-				if (category.coverImageFullData.public_id) {
-					await Cloudinary.deleteFile(category.coverImageFullData.public_id)
-						.then((result) => {
-							return result;
-						})
-						.catch((err) => {
-							return res
-								.status(500)
-								.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
-						});
-				}
-			}
-
-			const resultUploadedImage = await Cloudinary.uploadFile(req.file)
-				.then((result) => {
-					return result;
-				})
-				.catch((err) => {
-					return res
-						.status(500)
-						.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_UPDATION_FAILED));
-				});
-
-			if (resultUploadedImage.error) {
-				return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.FILE_NOT_UPLOADED));
-			}
-
-			coverImageFullData = resultUploadedImage.data;
-
-			const { width, height, secure_url } = resultUploadedImage.data;
-
-			coverImage = {
-				width,
-				height,
-				secure_url,
-			};
+			coverImage = path.basename(req.file.path);
 		}
 
 		category.name = name;
 		category.shortDescription = shortDescription;
 		category.coverImage = coverImage;
-		category.coverImageFullData = coverImageFullData;
 		category.isPopular = isPopular;
 		category.status = status;
 		category.updatedBy = updatedBy;
@@ -186,23 +138,9 @@ class CategoryController {
 		if (!category) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
 		}
-
-		if (
-			category.coverImageFullData &&
-			category.coverImageFullData !== null &&
-			typeof category.coverImageFullData == 'object'
-		) {
-			if (category.coverImageFullData.public_id) {
-				await Cloudinary.deleteFile(category.coverImage.public_id)
-					.then((result) => {
-						return result;
-					})
-					.catch((err) => {
-						return res
-							.status(500)
-							.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_IMG_NOT_DELETED));
-					});
-			}
+		
+		if (category.coverImage) {
+			fs.unlinkSync(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
 		}
 
 		await RedisCache.flush();
@@ -235,35 +173,12 @@ class CategoryController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORIES_NOT_FOUND));
 		}
 
-		const coverImagesPublicIds = categories
-			.filter((category) => category.coverImageFullData !== null)
-			.filter((category) => typeof category.coverImageFullData !== 'string')
-			.map((category) => {
-				if (
-					typeof category.coverImageFullData === 'object' &&
-					category.coverImageFullData !== null
-				) {
-					if (category.coverImageFullData.hasOwnProperty('public_id')) {
-						return category.coverImageFullData.public_id;
-					}
-				}
-			});
-
-		if (coverImagesPublicIds.length > 0) {
-			const result = await Cloudinary.batchDeleteFiles(coverImagesPublicIds)
-				.then((result) => {
-					return result;
-				})
-				.catch((err) => {
-					return res
-						.status(500)
-						.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_IMG_NOT_DELETED));
-				});
-
-			if (result.error) {
-				return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_DELETED));
+		// remove cover images from multer public/images folder
+		categories.forEach(element => {
+			if (element.coverImage) {
+				fs.unlinkSync(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${element.coverImage}`));
 			}
-		}
+		});
 
 		await Category.deleteMany({
 			_id: {
@@ -294,7 +209,7 @@ class CategoryController {
 		}
 
 		const categories = await Category.find().select(
-			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData'
+			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks'
 		);
 
 		await RedisCache.set('categories', JSON.stringify(categories));
@@ -342,7 +257,7 @@ class CategoryController {
 		}
 
 		const category = await Category.findById(categoryId).select(
-			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData'
+			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks'
 		);
 
 		if (!category) {
@@ -405,7 +320,7 @@ class CategoryController {
 		}
 
 		const categories = await Category.find()
-			.select('-__v -createdAt -updatedAt -createdBy -updatedBy -clicks -coverImageFullData')
+			.select('-__v -createdAt -updatedAt -createdBy -updatedBy -clicks')
 			.limit(LIMIT * 1)
 			.skip((PAGE - 1) * LIMIT)
 			.exec();
@@ -484,26 +399,15 @@ class CategoryController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
 		}
 
-		if (
-			category.coverImageFullData &&
-			category.coverImageFullData !== null &&
-			typeof category.coverImageFullData == 'object'
-		) {
-			if (category.coverImageFullData.public_id) {
-				await Cloudinary.deleteFile(category.coverImageFullData.public_id)
-					.then((result) => {
-						return result;
-					})
-					.catch((err) => {
-						return res
-							.status(500)
-							.json(ReturnResult.error(err, ERROR_MESSAGES.CATEGORY_IMG_NOT_DELETED));
-					});
-			}
+		if (!category.coverImage) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_COVER_IMAGE_NOT_FOUND));
 		}
 
+		const imageId = category.coverImage;
+
+		fs.unlink(`${UPLOADED_IMAGE_PATH}/${imageId}`);
+
 		category.coverImage = null;
-		category.coverImageFullData = null;
 
 		await category.save();
 
@@ -552,6 +456,12 @@ function validateCategoryParams(categoryQueryParams) {
 	});
 
 	return schema.validate(categoryQueryParams);
+}
+
+function removeFile(req) {
+	if(req.file) {
+		removeUploadedFile(req.file.path);
+	}
 }
 
 module.exports = CategoryController;

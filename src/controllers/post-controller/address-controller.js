@@ -43,7 +43,7 @@ const MESSAGES = {
 class CountryController {
 	static getCountries = async (req, res) => {
 		const cachedCountries = await RedisCache.get('countries');
-		
+
 		if (cachedCountries) {
 			return res
 				.status(200)
