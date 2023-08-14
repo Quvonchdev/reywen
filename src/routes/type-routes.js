@@ -8,10 +8,7 @@ const {
 } = require('../controllers/post-controller/type-controller');
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
-const isBlockedUser = require('../middlewares/block-user-middleware');
-const adminRole = require('../middlewares/admin-role-middleware');
 
-// authRole, isBlockedUser, adminRole, rateLimit(25, 1)
 const commonMiddleware = [];
 
 router.get('/currency', commonMiddleware, CurrencyTypes.getAllCurrencyType);

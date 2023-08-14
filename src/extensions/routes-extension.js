@@ -4,7 +4,7 @@ const category = require('../routes/category-routes');
 const address = require('../routes/address-routes');
 const clear = require('../routes/clear-routes');
 const types = require('../routes/type-routes');
-const rateLimit = require('../configurations/rate-limiter');
+const prices = require('../routes/price-routes');
 
 const URL_VERSION_1 = '/api/v1';
 
@@ -16,6 +16,7 @@ module.exports = (app) => {
 	routesV1('address', address);
 	routesV1('clear', clear);
 	routesV1('types', types);
+	routesV1('prices', prices);
 
 	// function to register routes. Don't touch this
 	function routesV1(route, router, middleware = []) {

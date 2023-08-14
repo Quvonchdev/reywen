@@ -37,6 +37,18 @@ class ReturnResult {
 			data: null,
 		};
 	}
+
+	static paginate(data, totalItems, page, limit) {
+		return {
+			totalItems: totalItems,
+			totalPages: Math.ceil(totalItems / limit),
+			isNextPageAvailable: limit * page < totalItems ? true : false,
+			isPreviousPageAvailable: limit * (page - 1) > 0 ? true : false,
+			currentPage: page,
+			currentItems: data.length,
+			data: data,
+		};
+	}
 }
 
 module.exports = ReturnResult;

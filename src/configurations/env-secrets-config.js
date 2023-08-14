@@ -21,4 +21,7 @@ module.exports = {
 	GMAIL: process.env.GMAIL,
 	GMAIL_PASSWORD: process.env.GMAIL_PASSWORD,
 	CLIENT_URL: process.env.CLIENT_URL,
+	ESKIZ_EMAIL: process.env.ESKIZ_EMAIL,
+	ESKIZ_PASSWORD: process.env.ESKIZ_PASSWORD,
+	CLIENT_REDIRECT_URL: process.env.CLIENT_REDIRECT_URL,
 };

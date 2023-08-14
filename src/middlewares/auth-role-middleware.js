@@ -7,6 +7,7 @@ const {
 	verifyUserData,
 	reqAccessToken,
 	verifyDecodedTokenHasUserRole,
+	verifyUserIsBlocked,
 } = require('./verify-access-token');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const ERROR_MESSAGES = require('./error-messages');
@@ -27,6 +28,10 @@ module.exports = function authRole(req, res, next) {
 
 	if (!verifyDecodedTokenHasVerifiedAccount(decodedToken)) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_VERIFIED_ACCOUNT));
+	}
+
+	if (verifyUserIsBlocked(decodedToken)) {
+		return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.ACCOUNT_BLOCKED));
 	}
 
 	if (!verifyDecodedTokenHasUserRoles(decodedToken)) {

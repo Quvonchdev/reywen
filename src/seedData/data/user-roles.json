@@ -9,6 +9,15 @@
         "name": "SuperAdmin"
     },
     {
-        "name": "Manager"
+        "name": "CanList"
+    },
+    {
+        "name": "CanCreate"
+    },
+    {
+        "name": "CanUpdate"
+    },
+    {
+        "name": "CanDelete"
     }
 ]

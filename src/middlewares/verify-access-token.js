@@ -53,36 +53,12 @@ function verifyDecodedTokenHasUserRole(decodedToken) {
 	return true;
 }
 
-function verifyDecodedTokenHasAdminRole(decodedToken) {
-	if (!decodedToken.userRoles.includes('Admin')) {
-		return false;
-	}
-	return true;
-}
-
-function verifyDecodedTokenHasSuperAdminRole(decodedToken) {
-	if (!decodedToken.userRoles.includes('SuperAdmin')) {
-		return false;
-	}
-	return true;
-}
-
-function verifyDecodedTokenHasManagerRole(decodedToken) {
-	if (!decodedToken.userRoles.includes('Manager')) {
-		return false;
-	}
-	return true;
-}
-
 module.exports = {
 	reqAccessToken,
 	verifyAccessToken,
 	verifyUserData,
 	verifyDecodedTokenExists,
 	verifyDecodedTokenHasUserRoles,
-	verifyDecodedTokenHasAdminRole,
-	verifyDecodedTokenHasSuperAdminRole,
-	verifyDecodedTokenHasManagerRole,
 	verifyDecodedTokenHasVerifiedAccount,
 	verifyUserIsBlocked,
 	verifyDecodedTokenHasUserRole,

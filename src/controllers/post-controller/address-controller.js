@@ -58,6 +58,10 @@ class CountryController {
 	static getCountry = async (req, res) => {
 		const { countryId } = req.params;
 
+		if(isValidObjectId(countryId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const cachedCountry = await RedisCache.get(`country-${countryId}`);
 
 		if (cachedCountry) {
@@ -108,6 +112,11 @@ class CountryController {
 
 	static updateCountry = async (req, res) => {
 		const { countryId } = req.params;
+
+		if(isValidObjectId(countryId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const { error } = validateCountry(req.body);
 
 		if (error) {
@@ -137,6 +146,10 @@ class CountryController {
 
 	static deleteCountry = async (req, res) => {
 		const { countryId } = req.params;
+
+		if(isValidObjectId(countryId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
 
 		const country = await Country.findById(countryId);
 		if (!country) {
@@ -192,6 +205,10 @@ class RegionController {
 	static getRegion = async (req, res) => {
 		const { regionId } = req.params;
 
+		if(isValidObjectId(regionId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const cachedRegion = await RedisCache.get(`region-${regionId}`);
 
 		if (cachedRegion) {
@@ -238,6 +255,11 @@ class RegionController {
 
 	static updateRegion = async (req, res) => {
 		const { regionId } = req.params;
+
+		if(isValidObjectId(regionId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const { error } = validateRegion(req.body);
 
 		if (error) {
@@ -265,6 +287,10 @@ class RegionController {
 	static deleteRegion = async (req, res) => {
 		const { regionId } = req.params;
 
+		if(isValidObjectId(regionId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const region = await Region.findById(regionId);
 		if (!region) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.REGION_NOT_FOUND));
@@ -277,6 +303,16 @@ class RegionController {
 
 	static batchDeleteRegions = async (req, res) => {
 		const { regionIds } = req.body;
+
+		if(regionIds.length === 0) {
+			return res.status(404).json(ReturnResult.errorMessage('Ids not found'));
+		}
+
+		const isValid = regionIds.every((id) => isValidObjectId(id));
+
+		if(isValid === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
 
 		const regions = await Region.find({ _id: { $in: regionIds } });
 
@@ -333,6 +369,10 @@ class DistrictController {
 	static getDistrict = async (req, res) => {
 		const { districtId } = req.params;
 
+		if(isValidObjectId(districtId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const cachedDistrict = await RedisCache.get(`district-${districtId}`);
 
 		if (cachedDistrict) {
@@ -352,6 +392,10 @@ class DistrictController {
 
 	static getDistrictByRegion = async (req, res) => {
 		const { regionId } = req.params;
+
+		if(isValidObjectId(districtId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
 
 		const cachedDistricts = await RedisCache.get(`districts-${regionId}`);
 
@@ -399,6 +443,11 @@ class DistrictController {
 
 	static updateDistrict = async (req, res) => {
 		const { districtId } = req.params;
+
+		if(isValidObjectId(districtId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const { error } = validateDistrict(req.body);
 
 		if (error) {
@@ -425,6 +474,10 @@ class DistrictController {
 	static deleteDistrict = async (req, res) => {
 		const { districtId } = req.params;
 
+		if(isValidObjectId(districtId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const district = await District.findById(districtId);
 		if (!district) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.DISTRICT_NOT_FOUND));
@@ -437,6 +490,16 @@ class DistrictController {
 
 	static batchDeleteDistricts = async (req, res) => {
 		const { districtIds } = req.body;
+
+		if (!districtIds || districtIds.length === 0) {
+			return res.status(400).json(ReturnResult.errorMessage("District's id is required"));
+		}
+
+		const isValid = districtIds.every((id) => isValidObjectId(id));
+
+		if (isValid === false) {
+			return res.status(400).json(ReturnResult.errorMessage("Invalid district's id"));
+		}
 
 		const districts = await District.find({ _id: { $in: districtIds } });
 
@@ -484,6 +547,10 @@ class ZoneController {
 	static getZone = async (req, res) => {
 		const { zoneId } = req.params;
 
+		if(isValidObjectId(zoneId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const cachedZone = await RedisCache.get(`zone-${zoneId}`);
 
 		if (cachedZone) {
@@ -503,6 +570,10 @@ class ZoneController {
 
 	static getZonesByDistrict = async (req, res) => {
 		const { districtId } = req.params;
+
+		if(isValidObjectId(districtId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
 
 		const cachedZones = await RedisCache.get(`zones-${districtId}`);
 
@@ -550,6 +621,11 @@ class ZoneController {
 
 	static updateZone = async (req, res) => {
 		const { zoneId } = req.params;
+
+		if(isValidObjectId(zoneId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const { error } = validateZone(req.body);
 
 		if (error) {
@@ -576,6 +652,10 @@ class ZoneController {
 	static deleteZone = async (req, res) => {
 		const { zoneId } = req.params;
 
+		if(isValidObjectId(zoneId) === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
+
 		const zone = await Zone.findById(zoneId);
 		if (!zone) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.ZONE_NOT_FOUND));
@@ -588,6 +668,16 @@ class ZoneController {
 
 	static batchDeleteZones = async (req, res) => {
 		const { zoneIds } = req.body;
+
+		if (!zoneIds || zoneIds.length === 0) {
+			return res.status(400).json(ReturnResult.errorMessage("Zone id's are required"));
+		}
+
+		const isValid = zoneIds.every((id) => isValidObjectId(id));
+
+		if (isValid === false) {
+			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
+		}
 
 		const zones = await Zone.find({ _id: { $in: zoneIds } });
 

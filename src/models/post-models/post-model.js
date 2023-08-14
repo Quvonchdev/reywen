@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
+const { v4: uuid } = require('uuid');
 
 const postSchema = new mongoose.Schema({
+	uuid: {
+		type: mongoose.Schema.Types.UUID,
+		default: uuid(),
+	},
 	title: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
@@ -18,20 +23,28 @@ const postSchema = new mongoose.Schema({
 		type: Array,
 		default: [],
 	},
+	category: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Category',
+		autopopulate: true,
+	},
 	operationType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'OperationType',
+			autopopulate: true,
 		},
 	],
 	currencyType: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'CurrencyType',
+		autopopulate: true,
 	},
 	priceType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PriceType',
+			autopopulate: true,
 		},
 	],
 	price: {
@@ -42,6 +55,7 @@ const postSchema = new mongoose.Schema({
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PaymentType',
+			autopopulate: true,
 		},
 	],
 	facilities: {
@@ -62,15 +76,18 @@ const postSchema = new mongoose.Schema({
 	country: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Country',
+		autopopulate: true,
 	},
 	district: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'District',
 		required: true,
+		autopopulate: true,
 	},
 	zone: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Zone',
+		autopopulate: true,
 	},
 	street: {
 		type: mongoose.Schema.Types.Mixed,
@@ -106,7 +123,7 @@ const postSchema = new mongoose.Schema({
 	},
 	isContactVisible: {
 		type: Boolean,
-		default: false,
+		default: true,
 	},
 	// User panel
 	createdByAt: {
@@ -213,5 +230,6 @@ postSchema.pre('validate', function (next) {
 	next();
 });
 
+postSchema.plugin(require('mongoose-autopopulate'));
 const Post = mongoose.model('Post', postSchema);
 exports.Post = Post;

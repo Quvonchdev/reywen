@@ -4,7 +4,9 @@ const { VerifyCode } = require('../models/user-models/verify-user-model');
 const { UserLog } = require('../models/user-models/user-logs-model');
 const { UserRole } = require('../models/user-models/user-role');
 const { emailTemplate } = require('../configurations/mail-template');
+const { smsTemplate } = require('../configurations/sms-template');
 const { sendMail } = require('../utils/mail');
+const SmsEskiz = require('../utils/sms');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const { UserFavorites } = require('../models/user-models/user-favorites-model');
 
@@ -13,6 +15,7 @@ const joi = require('joi');
 const jwt = require('jsonwebtoken');
 const randomstring = require('randomstring');
 const RedisCache = require('../utils/redis');
+const { isValidObjectId } = require('mongoose');
 
 const SUCCESS_MESSAGES = {
 	USER_REGISTERED: 'User registered successfully. Please verify your account!',
@@ -50,6 +53,7 @@ const ERROR_MESSAGES = {
 	USER_ALREADY_VERIFIED: 'User already verified',
 	LOGIN_OR_PASSWORD_INCORRECT: 'Login or password incorrect',
 	PASSWORD_SAME: 'New password must be different from old password',
+	FORBIDDEN: 'Forbidden',
 };
 
 class UserController {
@@ -62,15 +66,11 @@ class UserController {
 
 		const { fullName, email, phoneNumber, password, confirmPassword, shortDescription } = req.body;
 
-		const checkEmail = await User.findOne({
-			email,
-		});
-
 		const checkPhoneNumber = await User.findOne({
 			phoneNumber,
 		});
 
-		if (checkEmail || checkPhoneNumber) {
+		if (checkPhoneNumber) {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_EXISTS));
 		}
 
@@ -116,6 +116,7 @@ class UserController {
 		}
 		// send email verification
 		await sendMail(mailOptions(user, verify_code));
+		// await SmsEskiz.sendMessage(smsTemplate(verify_code), phoneNumber, 'Uyer', `${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`)
 
 		const returnData = {
 			_id: user._id,
@@ -138,6 +139,11 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
 		const { verifyCode } = req.body;
 
 		const verify_code = await VerifyCode.findOne({
@@ -403,6 +409,11 @@ class UserController {
 	static getUserLogs = async (req, res) => {
 		const { userId } = req.params;
 
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+
 		const user = await User.findOne({
 			_id: userId,
 		});
@@ -420,6 +431,10 @@ class UserController {
 
 	static getUserProfile = async (req, res) => {
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
 
 		const user = await User.findOne({
 			_id: userId,
@@ -468,6 +483,10 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
 
 		const { fullName, phoneNumber, shortDescription } = req.body;
 
@@ -520,6 +539,11 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
 		const { categoryFavorites } = req.body;
 
 		const checkUser = await User.findById(userId);
@@ -588,6 +612,12 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+
 		const { favoritePost } = req.body;
 
 		const checkUser = await User.findById(userId);
@@ -650,6 +680,11 @@ class UserController {
 	static getUserFavorites = async (req, res) => {
 		const { userId } = req.params;
 
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+
 		const USER = await User.findById(userId);
 
 		if (!USER) {
@@ -681,6 +716,11 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
 		const { categoryFavorites } = req.body;
 
 		const user = await User.findById(userId);
@@ -716,6 +756,11 @@ class UserController {
 		}
 
 		const { userId } = req.params;
+
+		if(isValidObjectId(userId) === false) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
 		const { postFavorites } = req.body;
 
 		const user = await User.findById(userId);
@@ -747,7 +792,7 @@ class UserController {
 function validateRegisterSchema(reqBody) {
 	const schema = joi.object({
 		fullName: joi.string().min(3).max(30).required(),
-		email: joi.string().email().min(3).max(255).required(),
+		email: joi.string().email().min(3).max(255).optional(),
 		phoneNumber: joi.string().min(10).max(15).required(),
 		password: joi.string().min(6).max(1024).required(),
 		confirmPassword: joi.string().min(6).max(255).required(),

@@ -10,6 +10,7 @@ const { OperationType } = require('../models/post-models/operation-type-model');
 const { CurrencyType } = require('../models/post-models/currency-type-model');
 const { PriceType } = require('../models/post-models/price-type-model');
 const { PaymentType } = require('../models/post-models/payment-type-model');
+const { Prices } = require('../models/post-models/prices-model');
 
 // data [src/seedData/data]
 const countries = require('./data/countries.json');
@@ -21,6 +22,7 @@ const operationTypes = require('./data/operation-types.json');
 const currencyTypes = require('./data/currency-types.json');
 const priceTypes = require('./data/price-types.json');
 const paymentTypes = require('./data/payment-types.json');
+const prices = require('./data/prices.json');
 
 // connect to mongodb [src/connections/mongodb-connection.js]
 (async () => await mongodbConnection())();
@@ -214,6 +216,24 @@ async function seedPaymentTypes() {
 	}
 }
 
+async function seedPrices() {
+	try {
+		(async () => {
+			if ((await Prices.countDocuments()) > 0) {
+				await Prices.deleteMany({});
+			}
+
+			await Prices.insertMany(prices);
+			console.log('🌱 Seed data successfully: Prices');
+			process.exit(0);
+		})();
+	} catch (err) {
+		console.log(`❌ Error: ${err.message}`);
+		console.log('Shutting down the server due to Uncaught Exception');
+		process.exit(1);
+	}
+}
+
 // seed data do it one by one. I don't recommend to you run all at once.
 // also it doesn't recommend to do it. After seeding data, don't do it again.
 // because it will delete all data and insert again!
@@ -229,3 +249,4 @@ async function seedPaymentTypes() {
 // seedCurrencyTypes();
 // seedPriceTypes();
 // seedPaymentTypes();
+seedPrices();

@@ -16,7 +16,6 @@ module.exports = (app) => {
 	app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 1000000 }));
 
 	if (envSecretsConfig.NODE_ENV === 'development') {
-		// Log requests to console
 		app.use(morgan('dev'));
 	}
 

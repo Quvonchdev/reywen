@@ -1,0 +1,34 @@
+[
+    {
+        "vip": {
+            "sum": 49000,
+            "dollar": 4.9,
+            "euro": 4.9,
+            "rub": 499
+        },
+        "top": {
+            "sum": 39000,
+            "dollar": 3.9,
+            "euro": 3.9,
+            "rub": 399
+        },
+        "urgently" : {
+            "sum": 29000,
+            "dollar": 2.9,
+            "euro": 2.9,
+            "rub": 299
+        },
+        "premium" : {
+            "sum": 19000,
+            "dollar": 1.9,
+            "euro": 1.9,
+            "rub": 199
+        },
+        "auksion": {
+            "sum": 15000,
+            "dollar": 1.5,
+            "euro": 1.5,
+            "rub": 155
+        }
+    }
+]
