@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const pricesSchema = new mongoose.Schema(
 	{
@@ -62,5 +63,5 @@ const pricesSchema = new mongoose.Schema(
 	}
 );
 
-const Prices = mongoose.model('Prices', pricesSchema);
+const Prices = primaryDatabase.model('Prices', pricesSchema);
 exports.Prices = Prices;

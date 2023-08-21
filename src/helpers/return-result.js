@@ -49,6 +49,10 @@ class ReturnResult {
 			data: data,
 		};
 	}
+
+	static custom(data) {
+		return data;
+	}
 }
 
 module.exports = ReturnResult;

@@ -1,15 +1,17 @@
 const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
 const { v4: uuid } = require('uuid');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const postSchema = new mongoose.Schema({
 	uuid: {
-		type: mongoose.Schema.Types.UUID,
+		type: String,
 		default: uuid(),
 	},
 	title: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -27,24 +29,28 @@ const postSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Category',
 		autopopulate: true,
+		required: true,
 	},
 	operationType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'OperationType',
 			autopopulate: true,
+			required: true,
 		},
 	],
 	currencyType: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'CurrencyType',
 		autopopulate: true,
+		required: true,
 	},
 	priceType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PriceType',
 			autopopulate: true,
+			required: true,
 		},
 	],
 	price: {
@@ -56,6 +62,7 @@ const postSchema = new mongoose.Schema({
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'PaymentType',
 			autopopulate: true,
+			required: true,
 		},
 	],
 	facilities: {
@@ -65,17 +72,24 @@ const postSchema = new mongoose.Schema({
 	},
 	slug: {
 		type: mongoose.Schema.Types.Mixed,
+		default: null,
 		required: true,
-		unique: true,
+		index: true,
 	},
 	fullInfo: {
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
+		required: true,
 	},
 	// Address
 	country: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Country',
+		autopopulate: true,
+	},
+	region: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Region',
 		autopopulate: true,
 	},
 	district: {
@@ -103,6 +117,10 @@ const postSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 		required: true,
+	},
+	isAddressVisible: {
+		type: Boolean,
+		default: true,
 	},
 	// Contact
 	contactPhone: {
@@ -145,16 +163,16 @@ const postSchema = new mongoose.Schema({
 		default: null,
 	},
 	// Admin panel
-	moderationStatus: {
+	modernizationStatus: {
 		type: String,
 		enum: ['pending', 'approved', 'rejected'],
 		default: 'pending',
 	},
-	moderationComment: {
+	modernizationComment: {
 		type: String,
 		default: null,
 	},
-	moderationBy: {
+	modernizationBy: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'User',
 		default: null,
@@ -224,12 +242,12 @@ const postSchema = new mongoose.Schema({
 });
 
 postSchema.pre('validate', function (next) {
-	if (this.name) {
-		this.slug = generateSlag(this.name);
+	if (this.title) {
+		this.slug = generateSlag(this.title);
 	}
 	next();
 });
 
 postSchema.plugin(require('mongoose-autopopulate'));
-const Post = mongoose.model('Post', postSchema);
+const Post = primaryDatabase.model('Post', postSchema);
 exports.Post = Post;

@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const districtSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	id: {
 		type: Number,
@@ -29,5 +31,5 @@ const districtSchema = new mongoose.Schema({
 	},
 });
 
-const District = mongoose.model('District', districtSchema);
+const District = primaryDatabase.model('District', districtSchema);
 exports.District = District;

@@ -1,5 +1,5 @@
-function smsTemplate(code, expiredAt = 60) {
-	return `Ваш код доступа: ${code}. Код действителен в течение ${expiredAt} минут.`;
+function smsTemplate(code, expiredAt = 30) {
+	return `uyer.uz\nВаш код для авторизации : ${code}\nКод действителен в течении ${expiredAt} минут\n`;
 }
 
 module.exports = { smsTemplate };

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const paymentSchema = new mongoose.Schema({
 	userId: {
@@ -37,4 +38,4 @@ const paymentSchema = new mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model('Payment', paymentSchema);
+module.exports = primaryDatabase.model('Payment', paymentSchema);

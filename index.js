@@ -16,6 +16,8 @@ const launchAppExtensions = require('./src/extensions/launch-extension');
 // This package will handle it for you
 require('express-async-errors');
 
+// Primary Database Connection
+
 // Middlewares
 commonMiddlewaresExtensions(app);
 
@@ -34,7 +36,8 @@ multerErrors(app);
 invalidRoute(app);
 // Global Error handling
 internalError(app);
+
 // Launch app on port 3000 or env port
-// it launches db, redis and telegram bot connection
+// it launches redis and telegram bot connection
 // and also handle unhandled promise rejections and uncaught exceptions
 launchAppExtensions(app);

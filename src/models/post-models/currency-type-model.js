@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 const currencyTypeSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -23,5 +25,5 @@ const currencyTypeSchema = new mongoose.Schema({
 	},
 });
 
-const CurrencyType = mongoose.model('CurrencyType', currencyTypeSchema);
+const CurrencyType = primaryDatabase.model('CurrencyType', currencyTypeSchema);
 exports.CurrencyType = CurrencyType;

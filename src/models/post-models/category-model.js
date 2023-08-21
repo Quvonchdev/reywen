@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
-const categorySchema = new mongoose.Schema({
+const categorySchemas = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -19,6 +21,7 @@ const categorySchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	clicks: {
 		type: Number,
@@ -59,5 +62,5 @@ categorySchema.pre('validate', function (next) {
 	next();
 });
 
-const Category = mongoose.model('Category', categorySchema);
+const Category = primaryDatabase.model('Category', categorySchemas);
 exports.Category = Category;

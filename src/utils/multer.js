@@ -9,7 +9,7 @@ const PATH_ASSETS = '../../public/assets';
 // add here file extensions that you want to accept
 const supportedFileExtensions = ['.mp4', '.pdf', '.mp3', '.jpeg', '.jpg', '.gif', '.webp', '.png'];
 
-const MAX_MB = 1; // MAX File size
+const MAX_MB = 3; // MAX File size
 const MAX_SIZE = 1024 * 1024 * MAX_MB; // 5 MB
 const MAX_FILES = 30;
 const MAX_FIELD_NAME = 100;

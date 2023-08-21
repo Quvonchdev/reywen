@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const paymentTypeSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -20,5 +22,5 @@ const paymentTypeSchema = new mongoose.Schema({
 	},
 });
 
-const PaymentType = mongoose.model('PaymentType', paymentTypeSchema);
+const PaymentType = primaryDatabase.model('PaymentType', paymentTypeSchema);
 exports.PaymentType = PaymentType;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const logsDatabase = require('../../connections/database-connections/logs-db-connection');
 
 // create this schema when user is logged in
 const userLogSchema = new mongoose.Schema({
@@ -33,5 +34,5 @@ const userLogSchema = new mongoose.Schema({
 	},
 });
 
-const UserLog = mongoose.model('UserLog', userLogSchema);
+const UserLog = logsDatabase.model('UserLog', userLogSchema);
 exports.UserLog = UserLog;

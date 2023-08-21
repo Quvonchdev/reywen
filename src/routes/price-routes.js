@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PricesController = require('../controllers/post-controller/prices-controller');
+const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
 
 const commonMiddleware = [];
 
@@ -11,6 +12,6 @@ router.post('/', commonMiddleware, PricesController.createPrice);
 router.put('/:priceId', commonMiddleware, PricesController.updatePrice);
 router.delete('/:priceId', commonMiddleware, PricesController.deletePrice);
 router.post('/batch-delete', commonMiddleware, PricesController.batchDeletePrices);
-router.get('/status/:priceId', commonMiddleware, PricesController.updatePriceStatus)
+router.get('/status/:priceId', commonMiddleware, PricesController.updatePriceStatus);
 
 module.exports = router;

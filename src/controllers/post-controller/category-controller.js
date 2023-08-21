@@ -89,10 +89,6 @@ class CategoryController {
 		const { name, shortDescription, updatedBy, isPopular, status } = req.body;
 		const { categoryId } = req.params;
 
-		if(isValidObjectId(categoryId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
 		const user = await User.findById(updatedBy);
 
 		if (!user) {
@@ -138,10 +134,6 @@ class CategoryController {
 	static deleteCategory = async (req, res) => {
 		const { categoryId } = req.params;
 
-		if(isValidObjectId(categoryId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
 		const category = await Category.findByIdAndDelete(categoryId);
 
 		if (!category) {
@@ -166,15 +158,8 @@ class CategoryController {
 
 		const { ids, userId } = req.body;
 
-		if(ids.length === 0) {
+		if (ids.length === 0) {
 			return res.status(400).json(ReturnResult.errorMessage('Ids are required'));
-		}
-
-		// check all ids are valid
-		const isValid = ids.every((id) => isValidObjectId(id));
-
-		if (isValid === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid ids'));
 		}
 
 		const user = await User.findById(userId);
@@ -232,7 +217,9 @@ class CategoryController {
 			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks'
 		);
 
-		await RedisCache.set('categories', JSON.stringify(categories));
+		if (categories.length > 0) {
+			await RedisCache.set('categories', JSON.stringify(categories));
+		}
 
 		return res
 			.status(200)
@@ -256,7 +243,9 @@ class CategoryController {
 
 		const categories = await Category.find();
 
-		await RedisCache.set('categoriesAdmin', JSON.stringify(categories));
+		if (categories.length > 0) {
+			await RedisCache.set('categoriesAdmin', JSON.stringify(categories));
+		}
 
 		return res
 			.status(200)
@@ -265,10 +254,6 @@ class CategoryController {
 
 	static getCategory = async (req, res) => {
 		const { categoryId } = req.params;
-
-		if(isValidObjectId(categoryId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
 
 		const cashedCategory = await RedisCache.get(`category:${categoryId}`);
 
@@ -295,10 +280,6 @@ class CategoryController {
 
 	static getCategoryForAdmin = async (req, res) => {
 		const { categoryId } = req.params;
-
-		if(isValidObjectId(categoryId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
 
 		const cashedCategory = await RedisCache.get(`categoryAdmin:${categoryId}`);
 
@@ -355,10 +336,12 @@ class CategoryController {
 
 		const totalItems = await Category.countDocuments();
 
-		await RedisCache.set(
-			`categories:${page}:${limit}`,
-			JSON.stringify(ReturnResult.paginate(categories, totalItems, PAGE, LIMIT))
-		);
+		if (categories.length > 0) {
+			await RedisCache.set(
+				`categories:${page}:${limit}`,
+				JSON.stringify(ReturnResult.paginate(categories, totalItems, PAGE, LIMIT))
+			);
+		}
 
 		return res
 			.status(200)
@@ -403,19 +386,21 @@ class CategoryController {
 
 		const totalItems = await Category.countDocuments();
 
-		await RedisCache.set(
-			`categoriesPgAdmin:${page}:${limit}`,
-			JSON.stringify(
-				ReturnResult.paginate(
-					categories,
-					totalItems,
-					PAGE,
-					LIMIT,
-					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
-					true
+		if (categories.length > 0) {
+			await RedisCache.set(
+				`categoriesPgAdmin:${page}:${limit}`,
+				JSON.stringify(
+					ReturnResult.paginate(
+						categories,
+						totalItems,
+						PAGE,
+						LIMIT,
+						SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
+						true
+					)
 				)
-			)
-		);
+			);
+		}
 
 		return res
 			.status(200)

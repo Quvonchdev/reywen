@@ -1,11 +1,15 @@
 const { bot } = require('../connections/telegram-bot-connection');
-const mongodbConnection = require('../connections/mongodb-connection');
 const redisClient = require('../connections/redis-cache-connection');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 
 module.exports = (app) => {
-	// MongoDB Connection
-	(async () => await mongodbConnection())();
+	// Database Connections
+	require('../connections/database-connections/primary-db-connection');
+	require('../connections/database-connections/chat-db-connection');
+	require('../connections/database-connections/user-db-connection');
+	require('../connections/database-connections/logs-db-connection');
+	require('../connections/database-connections/auction-db-connection');
+
 	// Redis Cache Connection
 	(async () => {
 		await redisClient.connect();
@@ -29,6 +33,7 @@ module.exports = (app) => {
 	process.on('unhandledRejection', (err) => {
 		console.log(`❌ Error: ${err.message}`);
 		console.log('Shutting down the server due to Unhandled Promise rejection');
+		// shutdown server
 		process.exit(1);
 	});
 
@@ -36,6 +41,7 @@ module.exports = (app) => {
 	process.on('uncaughtException', (err) => {
 		console.log(`❌ Error: ${err.message}`);
 		console.log('Shutting down the server due to Uncaught Exception');
+		// shutdown server
 		process.exit(1);
 	});
 };

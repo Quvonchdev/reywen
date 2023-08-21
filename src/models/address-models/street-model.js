@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const streetSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: String,
@@ -20,5 +22,5 @@ const streetSchema = new mongoose.Schema({
 	},
 });
 
-const Street = mongoose.model('Street', streetSchema);
+const Street = primaryDatabase.model('Street', streetSchema);
 exports.Street = Street;

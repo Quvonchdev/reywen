@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const userDatabase = require('../../connections/database-connections/user-db-connection');
 
 const verifyCodeSchema = new mongoose.Schema(
 	{
 		verifyCode: {
 			type: Number,
 			required: true,
+			index: true,
 		},
 		userId: {
 			type: mongoose.Schema.Types.ObjectId,
@@ -18,7 +20,7 @@ const verifyCodeSchema = new mongoose.Schema(
 		createdAt: {
 			type: Date,
 			default: Date.now,
-			required: true,
+			expires: 900,
 		},
 	},
 	{
@@ -26,12 +28,5 @@ const verifyCodeSchema = new mongoose.Schema(
 	}
 );
 
-verifyCodeSchema.index(
-	{ createdAt: 1 },
-	{
-		expireAfterSeconds: 10,
-	}
-);
-
-const VerifyCode = mongoose.model('VerifyCode', verifyCodeSchema);
+const VerifyCode = userDatabase.model('VerifyCode', verifyCodeSchema);
 exports.VerifyCode = VerifyCode;

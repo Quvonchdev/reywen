@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { v4: uuid } = require('uuid');
+const userDatabase = require('../../connections/database-connections/user-db-connection');
 
 const userSchema = new mongoose.Schema(
 	{
@@ -13,14 +14,16 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 			minlength: 3,
 			maxlength: 255,
+			index: true,
 		},
 		phoneNumber: {
 			type: String,
 			required: true,
 			unique: true,
 			trim: true,
-			minlength: 10,
+			minlength: 9,
 			maxlength: 15,
+			index: true,
 		},
 		password: {
 			type: String,
@@ -75,5 +78,5 @@ const userSchema = new mongoose.Schema(
 	}
 );
 
-const User = mongoose.model('User', userSchema);
+const User = userDatabase.model('User', userSchema);
 exports.User = User;

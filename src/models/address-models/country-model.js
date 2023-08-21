@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const countrySchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	Code: {
 		type: String,
@@ -36,5 +38,5 @@ const countrySchema = new mongoose.Schema({
 	},
 });
 
-const Country = mongoose.model('Country', countrySchema);
+const Country = primaryDatabase.model('Country', countrySchema);
 exports.Country = Country;

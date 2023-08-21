@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const zoneSchema = new mongoose.Schema({
 	id: {
@@ -8,6 +9,7 @@ const zoneSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
+		index: true,
 	},
 	district_id: {
 		type: Number,
@@ -28,5 +30,5 @@ const zoneSchema = new mongoose.Schema({
 	},
 });
 
-const Zone = mongoose.model('Zone', zoneSchema);
+const Zone = primaryDatabase.model('Zone', zoneSchema);
 exports.Zone = Zone;

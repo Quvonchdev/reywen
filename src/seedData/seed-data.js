@@ -1,4 +1,8 @@
-const mongodbConnection = require('../connections/mongodb-connection');
+const primaryDatabaseConnection = require('../connections/database-connections/primary-db-connection');
+const chatsDatabaseConnection = require('../connections/database-connections/chat-db-connection');
+const usersDatabaseConnection = require('../connections/database-connections/user-db-connection');
+const logsDatabaseConnection = require('../connections/database-connections/logs-db-connection');
+const auctionDatabaseConnection = require('../connections/database-connections/auction-db-connection');
 
 // models [src/models]
 const { Country } = require('../models/address-models/country-model');
@@ -24,8 +28,7 @@ const priceTypes = require('./data/price-types.json');
 const paymentTypes = require('./data/payment-types.json');
 const prices = require('./data/prices.json');
 
-// connect to mongodb [src/connections/mongodb-connection.js]
-(async () => await mongodbConnection())();
+// connect to database-connections [src/connections/database-connections-connection.js]
 
 // seed data
 
@@ -249,4 +252,4 @@ async function seedPrices() {
 // seedCurrencyTypes();
 // seedPriceTypes();
 // seedPaymentTypes();
-seedPrices();
+// seedPrices();
