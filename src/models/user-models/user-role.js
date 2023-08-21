@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const userDatabase = require('../../connections/database-connections/user-db-connection');
 
 const userRoleSchema = new mongoose.Schema({
 	name: {
 		type: String,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: String,
@@ -20,5 +22,5 @@ const userRoleSchema = new mongoose.Schema({
 	},
 });
 
-const UserRole = mongoose.model('UserRole', userRoleSchema);
+const UserRole = userDatabase.model('UserRole', userRoleSchema);
 exports.UserRole = UserRole;

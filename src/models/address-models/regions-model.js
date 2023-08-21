@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 
 const regionSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	id: {
 		type: Number,
@@ -29,5 +31,5 @@ const regionSchema = new mongoose.Schema({
 	},
 });
 
-const Region = mongoose.model('Region', regionSchema);
+const Region = primaryDatabase.model('Region', regionSchema);
 exports.Region = Region;

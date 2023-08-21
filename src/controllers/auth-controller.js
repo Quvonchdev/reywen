@@ -15,7 +15,6 @@ const joi = require('joi');
 const jwt = require('jsonwebtoken');
 const randomstring = require('randomstring');
 const RedisCache = require('../utils/redis');
-const { isValidObjectId } = require('mongoose');
 
 const SUCCESS_MESSAGES = {
 	USER_REGISTERED: 'User registered successfully. Please verify your account!',
@@ -64,7 +63,7 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { fullName, email, phoneNumber, password, confirmPassword, shortDescription } = req.body;
+		const { fullName, phoneNumber, password, confirmPassword, shortDescription } = req.body;
 
 		const checkPhoneNumber = await User.findOne({
 			phoneNumber,
@@ -88,7 +87,6 @@ class UserController {
 
 		const user = new User({
 			fullName: fullName,
-			email: email,
 			password: hashedPassword,
 			confirmPassword: hashedConfirmPassword,
 			phoneNumber: phoneNumber,
@@ -114,21 +112,33 @@ class UserController {
 			// save access code to database
 			await createAndSaveRandomVerifyCode(user._id, verify_code);
 		}
+
 		// send email verification
-		await sendMail(mailOptions(user, verify_code));
-		// await SmsEskiz.sendMessage(smsTemplate(verify_code), phoneNumber, 'Uyer', `${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`)
+		// sendMail(mailOptions(user, verify_code));
+		const smsResult = await SmsEskiz.sendMessage(
+			smsTemplate(verify_code),
+			phoneNumber,
+			4546,
+			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
+		).then((result) => {
+			return result;
+		});
 
 		const returnData = {
 			_id: user._id,
 			fullName: user.fullName,
-			email: user.email,
 			phoneNumber: user.phoneNumber,
 			coverImage: user.coverImage,
 			isVerified: user.isVerified,
 			shortDescription: user.shortDescription,
 			userRoles: user.userRoles,
 		};
-		return res.status(200).json(ReturnResult.success(returnData, SUCCESS_MESSAGES.USER_REGISTERED));
+
+		const resultMessage = {
+			data: SUCCESS_MESSAGES.USER_REGISTERED,
+			smsResult: smsResult.message,
+		};
+		return res.status(200).json(ReturnResult.success(returnData, resultMessage));
 	};
 
 	static verifyAccount = async (req, res) => {
@@ -139,11 +149,6 @@ class UserController {
 		}
 
 		const { userId } = req.params;
-
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
 		const { verifyCode } = req.body;
 
 		const verify_code = await VerifyCode.findOne({
@@ -153,15 +158,6 @@ class UserController {
 
 		if (!verify_code) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
-		}
-
-		let currentTime = Date.now();
-
-		if (currentTime >= verify_code.expiredAt) {
-			await VerifyCode.deleteMany({
-				userId: userId,
-			});
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.VERIFY_CODE_EXPIRED));
 		}
 
 		const user = await User.findOne({
@@ -188,10 +184,10 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { email } = req.body;
+		const { phoneNumber } = req.body;
 
 		const user = await User.findOne({
-			email: email,
+			phoneNumber,
 		});
 
 		if (!user) {
@@ -215,11 +211,24 @@ class UserController {
 			await createAndSaveRandomVerifyCode(user._id, verify_code);
 		}
 		// send email verification code
-		await sendMail(mailOptions(user, verify_code));
+		// await sendMail(mailOptions(user, verify_code));
+
+		const smsResult = await SmsEskiz.sendMessage(
+			smsTemplate(verify_code),
+			phoneNumber,
+			envSecretsConfig.ESKIZ_NICK,
+			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
+		).then((result) => {
+			return result;
+		});
 		// return success message
 		return res
 			.status(200)
-			.json(ReturnResult.successMessage(SUCCESS_MESSAGES.VERIFICATION_CODE_SENT));
+			.json(
+				ReturnResult.successMessage(
+					`${SUCCESS_MESSAGES.VERIFICATION_CODE_SENT}. ${smsResult.message}`
+				)
+			);
 	};
 
 	static login = async (req, res) => {
@@ -229,10 +238,10 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { email, password } = req.body;
+		const { phoneNumber, password } = req.body;
 
 		const user = await User.findOne({
-			email,
+			phoneNumber,
 		});
 
 		if (!user) {
@@ -283,7 +292,6 @@ class UserController {
 					user: {
 						_id: user._id,
 						fullName: user.fullName,
-						email: user.email,
 						phoneNumber: user.phoneNumber,
 						coverImage: user.coverImage,
 						isVerified: user.isVerified,
@@ -295,6 +303,56 @@ class UserController {
 		);
 	};
 
+	static forgotPassword = async (req, res) => {
+		const { error } = resendVerifyCodeSchema(req.body);
+
+		if (error) {
+			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
+		}
+
+		const { phoneNumber } = req.body;
+
+		const user = await User.findOne({
+			phoneNumber,
+		});
+
+		if (!user) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		// delete all verify code of user; because we send new verify code
+		await VerifyCode.deleteMany({
+			userId: user._id,
+		});
+
+		// create access code for email verification
+		const verify_code = createVerifyCode();
+
+		if (verify_code) {
+			// save access code to database
+			await createAndSaveRandomVerifyCode(user._id, verify_code);
+		}
+		// send email verification code
+		// await sendMail(mailOptions(user, verify_code));
+
+		const smsResult = await SmsEskiz.sendMessage(
+			smsTemplate(verify_code),
+			phoneNumber,
+			envSecretsConfig.ESKIZ_NICK,
+			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
+		).then((result) => {
+			return result;
+		});
+		// return success message
+		return res
+			.status(200)
+			.json(
+				ReturnResult.successMessage(
+					`${SUCCESS_MESSAGES.VERIFICATION_CODE_SENT}. ${smsResult.message}`
+				)
+			);
+	};
+
 	static resetPassword = async (req, res) => {
 		const { error } = validateResetPasswordSchema(req.body);
 
@@ -302,10 +360,10 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { email, password, confirmPassword, verifyCode } = req.body;
+		const { phoneNumber, password, confirmPassword, verifyCode } = req.body;
 
 		const user = await User.findOne({
-			email: email,
+			phoneNumber,
 		});
 
 		if (!user) {
@@ -356,28 +414,24 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { userId, oldPassword, newPassword, confirmNewPassword } = req.body;
+		const { userId, phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
 
 		const user = await User.findOne({
 			_id: userId,
+			phoneNumber,
 		});
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const matchOldPassword = await bcrypt.compare(oldPassword, user.password);
+		const verify_code = await VerifyCode.findOne({
+			verifyCode: verifyCode,
+			userId: user._id,
+		});
 
-		if (!matchOldPassword) {
-			return res
-				.status(400)
-				.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
-		}
-
-		const matchNewPassword = await bcrypt.compare(newPassword, user.password);
-
-		if (matchNewPassword) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.PASSWORD_SAME));
+		if (!verify_code) {
+			return res.status(400).send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
 		}
 
 		if (newPassword !== confirmNewPassword) {
@@ -403,16 +457,13 @@ class UserController {
 			}
 		);
 
-		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
+		return res
+			.status(200)
+			.json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
 	};
 
 	static getUserLogs = async (req, res) => {
 		const { userId } = req.params;
-
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
 
 		const user = await User.findOne({
 			_id: userId,
@@ -432,10 +483,6 @@ class UserController {
 	static getUserProfile = async (req, res) => {
 		const { userId } = req.params;
 
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
 		const user = await User.findOne({
 			_id: userId,
 		}).select('-password -confirmPassword');
@@ -444,9 +491,23 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const userFavorites = await UserFavorites.findOne({ userId: userId })
-			.select('-_id -userId -__v')
-			.populate('categoryFavorites', ['_id', 'name', 'slug', 'coverImage']);
+		console.log(req.userData);
+
+		const isMatchUserId = req.userData?._id;
+		console.log(isMatchUserId);
+
+		if (
+			!isMatchUserId ||
+			isMatchUserId == undefined ||
+			isMatchUserId == null ||
+			isMatchUserId !== userId
+		) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const userFavorites = await UserFavorites.findOne({ userId: userId }).select(
+			'-_id -userId -__v'
+		);
 
 		const result = {
 			profile: user,
@@ -483,10 +544,6 @@ class UserController {
 		}
 
 		const { userId } = req.params;
-
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
 
 		const { fullName, phoneNumber, shortDescription } = req.body;
 
@@ -539,10 +596,6 @@ class UserController {
 		}
 
 		const { userId } = req.params;
-
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
 
 		const { categoryFavorites } = req.body;
 
@@ -613,11 +666,6 @@ class UserController {
 
 		const { userId } = req.params;
 
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
-
 		const { favoritePost } = req.body;
 
 		const checkUser = await User.findById(userId);
@@ -680,25 +728,28 @@ class UserController {
 	static getUserFavorites = async (req, res) => {
 		const { userId } = req.params;
 
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
-
 		const USER = await User.findById(userId);
 
 		if (!USER) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const favorites = await UserFavorites.findOne({ userId }).populate('categoryFavorites', [
-			'_id',
-			'name',
-			'shortDescription',
-			'coverImage',
-			'slug',
-		]);
-
+		const favorites = await UserFavorites.findOne({ userId })
+			.populate('categoryFavorites', [
+				'name',
+				'shortDescription',
+				'coverImage',
+				'isPopular',
+				'slug',
+			])
+			.populate('postFavorites', [
+				'title',
+				'shortDescription',
+				'coverImage',
+				'postImages',
+				'price',
+				'slug',
+			]);
 		if (!favorites) {
 			return res.status(200).json(ReturnResult.success([], "User doesn't have any favorites yet!"));
 		}
@@ -716,10 +767,6 @@ class UserController {
 		}
 
 		const { userId } = req.params;
-
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
 
 		const { categoryFavorites } = req.body;
 
@@ -757,10 +804,6 @@ class UserController {
 
 		const { userId } = req.params;
 
-		if(isValidObjectId(userId) === false) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
 		const { postFavorites } = req.body;
 
 		const user = await User.findById(userId);
@@ -792,8 +835,7 @@ class UserController {
 function validateRegisterSchema(reqBody) {
 	const schema = joi.object({
 		fullName: joi.string().min(3).max(30).required(),
-		email: joi.string().email().min(3).max(255).optional(),
-		phoneNumber: joi.string().min(10).max(15).required(),
+		phoneNumber: joi.string().min(9).max(15).required(),
 		password: joi.string().min(6).max(1024).required(),
 		confirmPassword: joi.string().min(6).max(255).required(),
 		shortDescription: joi.string().max(500).optional(),
@@ -812,7 +854,7 @@ function validateVerifyAccountSchema(reqBody) {
 
 function resendVerifyCodeSchema(reqBody) {
 	const schema = joi.object({
-		email: joi.string().email().required(),
+		phoneNumber: joi.string().required(),
 	});
 
 	return schema.validate(reqBody);
@@ -820,7 +862,7 @@ function resendVerifyCodeSchema(reqBody) {
 
 function validateLoginSchema(reqBody) {
 	const schema = joi.object({
-		email: joi.string().email().required(),
+		phoneNumber: joi.string().required(),
 		password: joi.string().min(6).max(30).required(),
 	});
 
@@ -829,7 +871,7 @@ function validateLoginSchema(reqBody) {
 
 function validateResetPasswordSchema(reqBody) {
 	const schema = joi.object({
-		email: joi.string().email().required(),
+		phoneNumber: joi.string().required(),
 		password: joi.string().min(6).max(30).required(),
 		confirmPassword: joi.string().min(6).max(30).required(),
 		verifyCode: joi.number().required(),
@@ -841,9 +883,10 @@ function validateResetPasswordSchema(reqBody) {
 function validateChangePasswordSchema(reqBody) {
 	const schema = joi.object({
 		userId: joi.string().required(),
-		oldPassword: joi.string().min(6).max(30).required(),
+		phoneNumber: joi.string().required(),
 		newPassword: joi.string().min(6).max(30).required(),
 		confirmNewPassword: joi.string().min(6).max(30).required(),
+		verifyCode: joi.number().required(),
 	});
 
 	return schema.validate(reqBody);
@@ -918,14 +961,6 @@ function generateJwtToken(user) {
 	return jwt.sign(
 		{
 			_id: user._id,
-			fullName: user.fullName,
-			email: user.email,
-			phoneNumber: user.phoneNumber,
-			coverImage: user.coverImage,
-			isVerified: user.isVerified,
-			userRoles: user.userRoles || [],
-			shortDescription: user.shortDescription,
-			isBlockedUser: user.isBlockedUser,
 		},
 		envSecretsConfig.JWT_SECRET_KEY,
 		{

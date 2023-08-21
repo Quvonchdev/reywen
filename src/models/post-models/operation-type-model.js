@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 const operationTypeSchema = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -20,5 +22,5 @@ const operationTypeSchema = new mongoose.Schema({
 	},
 });
 
-const OperationType = mongoose.model('OperationType', operationTypeSchema);
+const OperationType = primaryDatabase.model('OperationType', operationTypeSchema);
 exports.OperationType = OperationType;

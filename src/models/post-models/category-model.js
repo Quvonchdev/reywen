@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
+const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
+const User = require('../user-models/user-model').User;
 
-const categorySchema = new mongoose.Schema({
+const categorySchemas = new mongoose.Schema({
 	name: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
@@ -19,6 +22,7 @@ const categorySchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
 		unique: true,
+		index: true,
 	},
 	clicks: {
 		type: Number,
@@ -38,7 +42,7 @@ const categorySchema = new mongoose.Schema({
 	},
 	createdBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		required: true,
 	},
 	updatedAt: {
@@ -47,17 +51,17 @@ const categorySchema = new mongoose.Schema({
 	},
 	updatedBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		default: null,
 	},
 });
 
-categorySchema.pre('validate', function (next) {
+categorySchemas.pre('validate', function (next) {
 	if (this.name) {
 		this.slug = generateSlag(this.name);
 	}
 	next();
 });
 
-const Category = mongoose.model('Category', categorySchema);
+const Category = primaryDatabase.model('Category', categorySchemas);
 exports.Category = Category;

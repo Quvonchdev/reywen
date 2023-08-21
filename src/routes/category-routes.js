@@ -5,8 +5,10 @@ const rateLimit = require('../configurations/rate-limiter');
 const upload = require('../utils/multer');
 const authRole = require('../middlewares/auth-role-middleware');
 const checkRoles = require('../middlewares/roles-middleware');
+const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
 
-const commonMiddleware = [authRole, checkRoles(['Admin', 'SuperAdmin']), rateLimit(30, 2)];
+// authRole, checkRoles(['Admin', 'SuperAdmin']),
+const commonMiddleware = [rateLimit(30, 2)];
 
 // for UI
 router.get('/', rateLimit(30, 2), Category.getCategoriesByPagination);

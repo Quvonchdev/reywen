@@ -9,9 +9,7 @@
     "prettier": "prettier --write \"**/*.js\"",
     "lint": "eslint --fix \"**/*.js\"",
     "seed-data": "cross-env NODE_ENV=development node ./src/seedData/seed-data.js",
-    "seed-data:prod": "cross-env NODE_ENV=production node ./src/seedData/seed-data.js",
-    "drop-db": "cross-env NODE_ENV=development node ./src/seedData/drop-db.js",
-    "drop-db:prod": "cross-env NODE_ENV=production node ./src/seedData/drop-db.js"
+    "seed-data:prod": "cross-env NODE_ENV=production node ./src/seedData/seed-data.js"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +39,7 @@
     "mongoose": "^7.4.0",
     "mongoose-autopopulate": "^1.0.1",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.2",
     "nodemailer": "^6.9.4",
     "path": "^0.12.7",
     "querystring": "^0.2.1",

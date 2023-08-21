@@ -2,7 +2,6 @@ const { Prices } = require('../../models/post-models/prices-model');
 const RedisCache = require('../../utils/redis');
 const ReturnResult = require('../../helpers/return-result');
 const Joi = require('joi');
-const { isValidObjectId } = require('mongoose');
 
 const MESSAGES = {
 	GET_ALL_PRICES: 'Prices retrieved successfully',
@@ -16,7 +15,7 @@ const MESSAGES = {
 class PricesController {
 	static getAllPrices = async (req, res) => {
 		const cachedPrices = await RedisCache.get('prices');
-		
+
 		if (cachedPrices) {
 			return res
 				.status(200)
@@ -35,10 +34,6 @@ class PricesController {
 	static getPriceById = async (req, res) => {
 		const { priceId } = req.params;
 
-		if(isValidObjectId(priceId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
 		const cachedPrice = await RedisCache.get(`price-${priceId}`);
 		if (cachedPrice) {
 			return res
@@ -48,7 +43,7 @@ class PricesController {
 
 		const price = await Prices.findById(priceId);
 
-		if(!price) {
+		if (!price) {
 			return res.status(404).json(ReturnResult.errorMessage('Price not found'));
 		}
 
@@ -120,12 +115,6 @@ class PricesController {
 
 		const { priceId } = req.params;
 
-		
-		if(isValidObjectId(priceId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
-
 		const price = await Prices.findById(priceId);
 
 		if (!price) {
@@ -149,11 +138,6 @@ class PricesController {
 
 	static updatePriceStatus = async (req, res) => {
 		const { priceId } = req.params;
-		
-		if(isValidObjectId(priceId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
 
 		const price = await Prices.findById(priceId);
 
@@ -181,11 +165,6 @@ class PricesController {
 	static deletePrice = async (req, res) => {
 		const { priceId } = req.params;
 
-		if(isValidObjectId(priceId) === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid id'));
-		}
-
-
 		const price = await Prices.findById(priceId);
 
 		if (!price) {
@@ -206,13 +185,6 @@ class PricesController {
 
 		if (!priceIds || priceIds.length <= 0) {
 			return res.status(400).json(ReturnResult.errorMessage('Price ids not found'));
-		}
-
-		//check if all ids are valid
-		const isValid = priceIds.every((id) => isValidObjectId(id));
-
-		if (isValid === false) {
-			return res.status(400).json(ReturnResult.errorMessage('Invalid ids'));
 		}
 
 		const prices = await Prices.find({ _id: { $in: priceIds } });
