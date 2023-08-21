@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const logsDatabase = require('../../connections/database-connections/logs-db-connection');
-
+const User = require('../user-models/user-model').User
 // create this schema when user is logged in
 const userLogSchema = new mongoose.Schema({
 	user: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		required: true,
 	},
 	ip: {

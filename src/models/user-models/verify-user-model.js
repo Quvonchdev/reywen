@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const userDatabase = require('../../connections/database-connections/user-db-connection');
+const User = require('../user-models/user-model').User;
 
 const verifyCodeSchema = new mongoose.Schema(
 	{
@@ -10,7 +11,7 @@ const verifyCodeSchema = new mongoose.Schema(
 		},
 		userId: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User',
+			ref: User,
 			required: true,
 		},
 		isExpired: {

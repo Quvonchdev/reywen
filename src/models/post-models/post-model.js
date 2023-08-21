@@ -2,6 +2,17 @@ const mongoose = require('mongoose');
 const generateSlag = require('../../helpers/slug-generator');
 const { v4: uuid } = require('uuid');
 const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
+const User = require('../user-models/user-model').User;
+const Category = require('../post-models/category-model').Category;
+const OperationType = require('../post-models/operation-type-model').OperationType;
+const CurrencyType = require('../post-models/currency-type-model').CurrencyType;
+const PriceType = require('../post-models/price-type-model').PriceType;
+const PaymentType = require('../post-models/payment-type-model').PaymentType;
+
+const Country = require('../address-models/country-model').Country;
+const Region = require('../address-models/regions-model').Region;
+const District = require('../address-models/district-model').District;
+const Zone = require('../address-models/zone-model').Zone;
 
 const postSchema = new mongoose.Schema({
 	uuid: {
@@ -27,28 +38,28 @@ const postSchema = new mongoose.Schema({
 	},
 	category: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Category',
+		ref: Category,
 		autopopulate: true,
 		required: true,
 	},
 	operationType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'OperationType',
+			ref: OperationType,
 			autopopulate: true,
 			required: true,
 		},
 	],
 	currencyType: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'CurrencyType',
+		ref: CurrencyType,
 		autopopulate: true,
 		required: true,
 	},
 	priceType: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'PriceType',
+			ref: PriceType,
 			autopopulate: true,
 			required: true,
 		},
@@ -60,7 +71,7 @@ const postSchema = new mongoose.Schema({
 	paymentTypes: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'PaymentType',
+			ref: PaymentType,
 			autopopulate: true,
 			required: true,
 		},
@@ -84,23 +95,23 @@ const postSchema = new mongoose.Schema({
 	// Address
 	country: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Country',
+		ref: Country,
 		autopopulate: true,
 	},
 	region: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Region',
+		ref: Region,
 		autopopulate: true,
 	},
 	district: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'District',
+		ref: District,
 		required: true,
 		autopopulate: true,
 	},
 	zone: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Zone',
+		ref: Zone,
 		autopopulate: true,
 	},
 	street: {
@@ -150,7 +161,7 @@ const postSchema = new mongoose.Schema({
 	},
 	createdBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		required: true,
 	},
 	updatedAt: {
@@ -159,7 +170,7 @@ const postSchema = new mongoose.Schema({
 	},
 	updatedBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		default: null,
 	},
 	// Admin panel
@@ -174,7 +185,7 @@ const postSchema = new mongoose.Schema({
 	},
 	modernizationBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		default: null,
 	},
 	isUrgently: {
@@ -224,7 +235,7 @@ const postSchema = new mongoose.Schema({
 	},
 	telegramSendedBy: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		default: null,
 	},
 	views: {

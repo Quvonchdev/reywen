@@ -56,10 +56,10 @@ router.get(
 	ZoneController.getZonesByDistrict
 );
 
-router.post('/countries', [...middleware, ...authMiddleware], CountryController.createCountry);
-router.post('/regions', [...middleware, ...authMiddleware], RegionController.createRegion);
-router.post('/districts', [...middleware, ...authMiddleware], DistrictController.createDistrict);
-router.post('/zones', [...middleware, ...authMiddleware], ZoneController.createZone);
+router.post('/countries', [...authMiddleware], CountryController.createCountry);
+router.post('/regions', [...authMiddleware], RegionController.createRegion);
+router.post('/districts', [...authMiddleware], DistrictController.createDistrict);
+router.post('/zones', [...authMiddleware], ZoneController.createZone);
 
 router.put(
 	'/countries/:countryId',

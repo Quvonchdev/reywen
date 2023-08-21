@@ -29,6 +29,10 @@ module.exports = async function authRole(req, res, next) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
+	if(!user.userRoles.includes('User')) {
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
+	}
+
 	req.userData = verifyUserData(decodedToken);
 
 	next();

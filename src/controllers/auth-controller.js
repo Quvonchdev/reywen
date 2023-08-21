@@ -491,8 +491,8 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		console.log(req.userData)
-		
+		console.log(req.userData);
+
 		const isMatchUserId = req.userData?._id;
 		console.log(isMatchUserId);
 
@@ -505,8 +505,9 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const userFavorites = await UserFavorites.findOne({ userId: userId })
-			.select('-_id -userId -__v')
+		const userFavorites = await UserFavorites.findOne({ userId: userId }).select(
+			'-_id -userId -__v'
+		);
 
 		const result = {
 			profile: user,
@@ -734,7 +735,21 @@ class UserController {
 		}
 
 		const favorites = await UserFavorites.findOne({ userId })
-
+			.populate('categoryFavorites', [
+				'name',
+				'shortDescription',
+				'coverImage',
+				'isPopular',
+				'slug',
+			])
+			.populate('postFavorites', [
+				'title',
+				'shortDescription',
+				'coverImage',
+				'postImages',
+				'price',
+				'slug',
+			]);
 		if (!favorites) {
 			return res.status(200).json(ReturnResult.success([], "User doesn't have any favorites yet!"));
 		}

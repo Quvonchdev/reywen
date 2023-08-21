@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const chatDatabase = require('../../connections/database-connections/chat-db-connection');
+const User = require('../user-models/user-model').User
 
 const userMessagesSchema = new mongoose.Schema({
 	message: {
@@ -8,12 +9,12 @@ const userMessagesSchema = new mongoose.Schema({
 	},
 	sender: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		required: true,
 	},
 	receiver: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
+		ref: User,
 		required: true,
 	},
 	date: {

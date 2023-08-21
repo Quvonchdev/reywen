@@ -11,7 +11,7 @@ const SmsTokenSchema = new mongoose.Schema(
 		createdAt: {
 			type: Date,
 			default: Date.now,
-			expires: 60 * 60 * 24 * 29, // 29 days
+			expires: 60,
 		},
 	},
 	{
