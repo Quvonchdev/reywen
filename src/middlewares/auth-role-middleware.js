@@ -29,7 +29,15 @@ module.exports = async function authRole(req, res, next) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
-	if(!user.userRoles.includes('User')) {
+	if (user.isVerified == false) {
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.ACCOUNT_NOT_VERIFIED));
+	}
+
+	if (user.isBlockedUser == true) {
+		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.ACCOUNT_BLOCKED));
+	}
+
+	if (!user.userRoles.includes('User')) {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 

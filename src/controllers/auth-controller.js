@@ -815,9 +815,7 @@ class UserController {
 		const favorite = await UserFavorites.findOne({ userId, postFavorites });
 
 		if (!favorite) {
-			return res
-				.status(404)
-				.json(ReturnResult.errorMessage('Product not found in your favorites!'));
+			return res.status(404).json(ReturnResult.errorMessage('Post not found in your favorites!'));
 		}
 
 		const postFavorite = await UserFavorites.findByIdAndUpdate(favorite._id, {
@@ -827,7 +825,7 @@ class UserController {
 		await postFavorite.save();
 		return res
 			.status(200)
-			.json(ReturnResult.successMessage('Product successfully removed from your favorites!'));
+			.json(ReturnResult.successMessage('Post successfully removed from your favorites!'));
 	};
 }
 

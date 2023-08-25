@@ -13,6 +13,7 @@ module.exports = (app) => {
 	// Redis Cache Connection
 	(async () => {
 		await redisClient.connect();
+		// await new RabbitMQConnection().connect();
 	})();
 
 	const port = envSecretsConfig.PORT || 3000;
@@ -33,6 +34,7 @@ module.exports = (app) => {
 	process.on('unhandledRejection', (err) => {
 		console.log(`❌ Error: ${err.message}`);
 		console.log('Shutting down the server due to Unhandled Promise rejection');
+
 		// shutdown server
 		process.exit(1);
 	});

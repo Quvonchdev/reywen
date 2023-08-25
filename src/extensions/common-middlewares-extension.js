@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const responseTime = require('response-time');
 const envSecretsConfig = require('../configurations/env-secrets-config');
+const scheduler = require('./scheduler-extention');
 
 module.exports = (app) => {
 	// Parse application/json
@@ -32,4 +33,7 @@ module.exports = (app) => {
 	app.use(responseTime());
 	// Disable X-Powered-By header: Express
 	app.disable('x-powered-by');
+
+	// Schedule Auction Status
+	scheduler();
 };

@@ -3,6 +3,13 @@ const multer = require('multer');
 
 module.exports = (app) => {
 	app.use((err, req, res, next) => {
+		if (req.file) {
+			removeUploadedFile(req.file.path);
+		} else if (req.files) {
+			for (const file of req.files) {
+				removeUploadedFile(file.path);
+			}
+		}
 		if (err instanceof multer.MulterError) {
 			res
 				.status(400)

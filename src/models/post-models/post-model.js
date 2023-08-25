@@ -119,15 +119,16 @@ const postSchema = new mongoose.Schema({
 		default: null,
 		required: true,
 	},
-	latitude: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-		required: true,
-	},
-	longitude: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-		required: true,
+	location: {
+		type: {
+			type: String,
+			enum: ['Point'],
+			default: 'Point',
+		},
+		coordinates: {
+			type: [Number],
+			required: true,
+		},
 	},
 	isAddressVisible: {
 		type: Boolean,

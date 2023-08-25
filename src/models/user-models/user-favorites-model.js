@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const userDatabase = require('../../connections/database-connections/user-db-connection');
 const Category = require('../post-models/category-model').Category;
 const Post = require('../post-models/post-model').Post;
-const User = require('../user-models/user-model').User
+const User = require('../user-models/user-model').User;
 
 // create this schema when user is registered
 // and add the user id to the user field

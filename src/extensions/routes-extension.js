@@ -9,6 +9,7 @@ const posts = require('../routes/post-routes');
 const eskiz = require('../routes/eskiz-routes');
 const userMessage = require('../routes/user-message-routes');
 const statistics = require('../routes/statistics-routes');
+const auction = require('../routes/auction-routes');
 
 // for versioning
 const url_v1 = '/api/v1';
@@ -26,6 +27,7 @@ module.exports = (app) => {
 	routes_v1('eskiz', eskiz);
 	routes_v1('message', userMessage);
 	routes_v1('statistics', statistics);
+	routes_v1('auction', auction);
 
 	// function to register routes. Don't touch this
 	function routes_v1(route, router, middleware = []) {

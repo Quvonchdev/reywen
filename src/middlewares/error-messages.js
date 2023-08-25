@@ -5,6 +5,7 @@ const ERROR_MESSAGES = {
 	NO_ACCESS:
 		"You don't have permission to access this resource. Please contact admin for more information",
 	ACCOUNT_BLOCKED: 'Your account has been blocked. Please contact admin for more information',
+	ACCOUNT_NOT_VERIFIED: 'Your account has not been verified. Please verify your account',
 };
 
 module.exports = ERROR_MESSAGES;

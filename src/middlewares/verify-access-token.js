@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 function reqAccessToken(req) {
-	return req.headers.authorization?.split(' ')[1];
+	return req.headers?.authorization?.split(' ')[1];
 }
 
 function verifyAccessToken(accessToken, JWT_SECRET_KEY) {

@@ -49,21 +49,32 @@ class PostController {
 	};
 
 	static getPostsByPagination = async (req, res) => {
-		const { page, limit } = req.query;
+		const { page, limit, filter, sort } = req.query;
 
 		const options = {
 			page: parseInt(page, 10) || 1,
 			limit: parseInt(limit, 10) || 10,
-			sort: { createdAt: -1 },
 		};
 
-		const posts = await Post.find({})
+		let query = {};
+		let sortOptions = {};
+
+		if (filter) {
+			const filterParams = JSON.parse(filter);
+			query = buildPostsFilterQuery(filterParams);
+		}
+
+		if (sort) {
+			sortOptions = buildSortOptions(sort);
+		}
+
+		const posts = await Post.find(query)
+			.sort(sortOptions)
 			.limit(options.limit)
 			.skip(options.limit * (options.page - 1))
-			.sort(options.sort)
 			.exec();
 
-		const totalItems = await Post.countDocuments();
+		const totalItems = posts.length;
 
 		return res
 			.status(200)
@@ -477,95 +488,109 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 	};
+}
 
-	static sendMessages = async (req, res) => {
-		const { sender, receiver, message } = req.body;
+function buildPostsFilterQuery(filterParams) {
+	const query = {};
 
-		const user = await User.findById(sender);
-		const userReceiver = await User.findById(receiver);
+	if (filterParams.createdBy) {
+		query.createdBy = filterParams.createdBy;
+	}
 
-		if (!user || !userReceiver) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
+	if (filterParams.category) {
+		query.category = filterParams.category;
+	}
+
+	if (filterParams.operationType) {
+		operationType = filterParams.operationType.split(',');
+		query.operationType = { $in: operationType };
+	}
+
+	if (filterParams.currencyType) {
+		query.currencyType = filterParams.currencyType;
+	}
+
+	if (filterParams.priceType) {
+		priceType = filterParams.priceType.split(',');
+		query.priceType = { $in: priceType };
+	}
+
+	if (filterParams.paymentTypes) {
+		paymentTypes = filterParams.paymentTypes.split(',');
+		query.paymentTypes = { $in: paymentTypes };
+	}
+
+	if (filterParams.price) {
+		query.price = {};
+
+		if (filterParams.price.min) {
+			query.price.$gte = filterParams.price.min;
 		}
 
-		const sendMessage = await UserMessage.create({
-			message,
-			sender,
-			receiver,
+		if (filterParams.price.max) {
+			query.price.$lte = filterParams.price.max;
+		}
+	}
+
+	if (filterParams.facilities) {
+		facilities = filterParams.facilities.split(',');
+		query.facilities = { $in: facilities };
+	}
+
+	if (filterParams.country) {
+		query.country = filterParams.country;
+	}
+
+	if (filterParams.district) {
+		query.district = filterParams.district;
+	}
+
+	if (filterParams.region) {
+		query.region = filterParams.region;
+	}
+
+	if (filterParams.zone) {
+		query.zone = filterParams.zone;
+	}
+
+	if (filterParams.lat && filterParams.long) {
+		query.location = {
+			$near: {
+				$geometry: {
+					type: 'Point',
+					coordinates: [filterParams.latitude, filterParams.longitude],
+				},
+				$maxDistance: 10000,
+			},
+		};
+	}
+
+	if (filterParams.isPopular) {
+		query.isPopular = filterParams.isPopular;
+	}
+
+	if (filterParams.title) {
+		query.title = { $regex: new RegExp(filterParams.title, 'gi') };
+	}
+
+	return query;
+}
+
+function buildSortOptions(sortParam) {
+	const sortOptions = {};
+
+	if (sortParam) {
+		const fields = sortParam.split(',');
+
+		fields.forEach((field) => {
+			const sortOrder = field.startsWith('-') ? -1 : 1;
+			const fieldName = field.replace(/^-/, '');
+
+			sortOptions[fieldName] = sortOrder;
 		});
+	}
 
-		await sendMessage.save();
-		return res.status(200).json(ReturnResult.success({}, SUCCESS_MESSAGES.SEND_MESSAGE_SUCCESS));
-	};
-
-	static getMessages = async (req, res) => {
-		const { userId } = req.params;
-
-		const user = await User.findById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
-		}
-
-		const messages = await UserMessage.find({ receiver: userId });
-
-		return res
-			.status(200)
-			.json(ReturnResult.success(messages, SUCCESS_MESSAGES.GET_MESSAGE_SUCCESS));
-	};
-
-	static getMessagesByUser = async (req, res) => {
-		const { userId } = req.params;
-
-		const user = await User.findById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
-		}
-
-		const messages = await UserMessage.find({ sender: userId });
-
-		return res
-			.status(200)
-			.json(ReturnResult.success(messages, SUCCESS_MESSAGES.GET_MESSAGE_SUCCESS));
-	};
-
-	static readMessage = async (req, res) => {
-		const { messageId } = req.params;
-
-		const message = await UserMessage.findById(messageId);
-
-		if (!message) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_MESSAGE));
-		}
-
-		message.isRead = true;
-		await message.save();
-
-		return res.status(200).json(ReturnResult.success({}, SUCCESS_MESSAGES.READ_MESSAGE_SUCCESS));
-	};
-
-	static deleteMessage = async (req, res) => {
-		const { messageId, userId } = req.params;
-
-		const user = await User.findById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
-		}
-
-		const message = await UserMessage.findById(messageId);
-
-		if (!message) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_MESSAGE));
-		}
-
-		if (message.receiver != userId) {
-			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_PERMISSION));
-		}
-
-		return res.status(200).json(ReturnResult.success({}, SUCCESS_MESSAGES.DELETE_MESSAGE_SUCCESS));
-	};
+	return sortOptions;
 }
 
 class Validation {
