@@ -9,6 +9,7 @@ const commonMiddleware = [];
 router.get('/all', commonMiddleware, PostController.getAllPosts);
 router.get('/:postId/single', commonMiddleware, PostController.getPost);
 router.get('/:userId', commonMiddleware, PostController.getPostByUser);
+router.get('/:slug', commonMiddleware, PostController.getPostBySlug);
 router.get('/:userId/posts', commonMiddleware, PostController.getPostByUserPagination);
 router.get('/category/:categoryId', commonMiddleware, PostController.getPostByCategory);
 

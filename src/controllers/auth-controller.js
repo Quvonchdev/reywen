@@ -417,7 +417,6 @@ class UserController {
 		const { userId, phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
 
 		const user = await User.findOne({
-			_id: userId,
 			phoneNumber,
 		});
 
@@ -491,10 +490,7 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		console.log(req.userData);
-
 		const isMatchUserId = req.userData?._id;
-		console.log(isMatchUserId);
 
 		if (
 			!isMatchUserId ||

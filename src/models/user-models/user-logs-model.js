@@ -32,6 +32,11 @@ const userLogSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+	createdAt: {
+		type: Date,
+		default: Date.now,
+		expires: 60 * 60 * 24 * 15, // 15 days
+	},
 });
 
 const UserLog = logsDatabase.model('UserLog', userLogSchema);

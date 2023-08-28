@@ -6,11 +6,9 @@ module.exports = (app) => {
 
 	if (secrets.NODE_ENV === 'production') {
 		origins = [
-			'https://www.yourdomain.com',
-			'https://yourdomain.com',
-			'https://yourdomain.com:3000',
-			'https://yourdomain.com:5000',
-			'https://yourdomain.com:8080',
+			// react app
+			'http://localhost:3000',
+			'https://localhost:3000/',
 		];
 	} else {
 		origins = '*';

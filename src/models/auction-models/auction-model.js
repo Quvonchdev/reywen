@@ -18,12 +18,6 @@ const auctionSchema = new mongoose.Schema({
 		default: null,
 		required: false,
 	},
-	post: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: Post,
-		required: true,
-		autopopulate: true,
-	},
 	startPrice: {
 		type: Number,
 		required: true,
@@ -37,19 +31,6 @@ const auctionSchema = new mongoose.Schema({
 		enum: ['fixed', 'percentage'],
 		required: true,
 	},
-	bidingUsers: [
-		{
-			price: {
-				type: Number,
-				required: true,
-			},
-			user: {
-				type: mongoose.Schema.Types.ObjectId,
-				ref: User,
-				required: true,
-			},
-		},
-	],
 	currentPrice: {
 		type: Number,
 		default: null,
@@ -82,6 +63,32 @@ const auctionSchema = new mongoose.Schema({
 	isPayed: {
 		type: Boolean,
 		default: false,
+	},
+	bidingUsers: [
+		{
+			price: {
+				type: Number,
+				required: true,
+			},
+			user: {
+				type: mongoose.Schema.Types.ObjectId,
+				ref: User,
+				required: true,
+			},
+			increment: {
+				type: Number,
+				required: true,
+			},
+			bidDate: {
+				type: Date,
+				default: Date.now,
+			},
+		},
+	],
+	post: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: Post,
+		required: true,
 	},
 });
 

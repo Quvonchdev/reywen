@@ -1,8 +1,13 @@
 const { bot } = require('../connections/telegram-bot-connection');
 const redisClient = require('../connections/redis-cache-connection');
 const envSecretsConfig = require('../configurations/env-secrets-config');
+const http = require('http');
+const socketConnection = require('../connections/socket-io-connection');
+
+const AuctionController = require('../controllers/auction-controller/auction-controller');
 
 module.exports = (app) => {
+	const server = http.createServer(app);
 	// Database Connections
 	require('../connections/database-connections/primary-db-connection');
 	require('../connections/database-connections/chat-db-connection');
@@ -10,14 +15,19 @@ module.exports = (app) => {
 	require('../connections/database-connections/logs-db-connection');
 	require('../connections/database-connections/auction-db-connection');
 
+	// Socket.io Connection
+	socketConnection.init(server);
+
+	// Auction Controller - Socket.io Connection
+	AuctionController.setSocket(socketConnection);
+
 	// Redis Cache Connection
 	(async () => {
 		await redisClient.connect();
-		// await new RabbitMQConnection().connect();
 	})();
 
 	const port = envSecretsConfig.PORT || 3000;
-	app.listen(port, () => {
+	server.listen(port, () => {
 		console.log(`🚀 Server is running on port ${port}: ${envSecretsConfig.NODE_ENV}`);
 
 		bot
