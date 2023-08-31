@@ -413,11 +413,10 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(error, 'Validation error'));
 		}
 
-		const { userId, phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
+		const { phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
 
 		const user = await User.findOne({
-			phoneNumber,
-			_id: userId,
+			phoneNumber
 		});
 
 		if (!user) {
@@ -455,6 +454,10 @@ class UserController {
 				new: true,
 			}
 		);
+
+		await VerifyCode.deleteMany({
+			userId: user._id,
+		});
 
 		return res
 			.status(200)
