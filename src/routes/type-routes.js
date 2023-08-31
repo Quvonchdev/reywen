@@ -10,8 +10,9 @@ const objectIdValidationMiddleware = require('../middlewares/objectId-validation
 
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
+const checkRoles = require('../middlewares/roles-middleware');
 
-const commonMiddleware = [];
+const commonMiddleware = [rateLimit(60, 1)];
 
 router.get('/currency', commonMiddleware, CurrencyTypes.getAllCurrencyType);
 router.get('/operation', commonMiddleware, OperationTypes.getAllOperationType);
@@ -39,10 +40,26 @@ router.get(
 	PaymentTypes.getPaymentType
 );
 
-router.post('/currency', commonMiddleware, CurrencyTypes.createCurrencyType);
-router.post('/operation', commonMiddleware, OperationTypes.createOperationType);
-router.post('/price', commonMiddleware, PriceTypes.createPriceType);
-router.post('/payment', commonMiddleware, PaymentTypes.createPaymentType);
+router.post(
+	'/currency',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	CurrencyTypes.createCurrencyType
+);
+router.post(
+	'/operation',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	OperationTypes.createOperationType
+);
+router.post(
+	'/price',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	PriceTypes.createPriceType
+);
+router.post(
+	'/payment',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	PaymentTypes.createPaymentType
+);
 
 router.put(
 	'/currency/:id',
@@ -51,44 +68,95 @@ router.put(
 );
 router.put(
 	'/operation/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	OperationTypes.updateOperationType
 );
 router.put(
 	'/price/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	PriceTypes.updatePriceType
 );
 router.put(
 	'/payment/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	PaymentTypes.updatePaymentType
 );
 
 router.delete(
 	'/currency/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	CurrencyTypes.deleteCurrencyType
 );
 router.delete(
 	'/operation/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	OperationTypes.deleteOperationType
 );
 router.delete(
 	'/price/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	PriceTypes.deletePriceType
 );
 router.delete(
 	'/payment/:id',
-	[...commonMiddleware, objectIdValidationMiddleware('id')],
+	[
+		...commonMiddleware,
+		objectIdValidationMiddleware('id'),
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+	],
 	PaymentTypes.deletePaymentType
 );
 
-router.post('/currency/batch-delete', commonMiddleware, CurrencyTypes.batchDeleteCurrencyType);
-router.post('/operation/batch-delete', commonMiddleware, OperationTypes.batchDeleteOperationType);
-router.post('/price/batch-delete', commonMiddleware, PriceTypes.batchDeletePriceType);
-router.post('/payment/batch-delete', commonMiddleware, PaymentTypes.batchDeletePaymentType);
+router.post(
+	'/currency/batch-delete',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	CurrencyTypes.batchDeleteCurrencyType
+);
+router.post(
+	'/operation/batch-delete',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	OperationTypes.batchDeleteOperationType
+);
+router.post(
+	'/price/batch-delete',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	PriceTypes.batchDeletePriceType
+);
+router.post(
+	'/payment/batch-delete',
+	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
+	PaymentTypes.batchDeletePaymentType
+);
 
 module.exports = router;

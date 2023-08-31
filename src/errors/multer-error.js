@@ -1,5 +1,6 @@
 const ReturnResult = require('../helpers/return-result');
 const multer = require('multer');
+const removeUploadedFile = require('../helpers/remove-uploaded-file');
 
 module.exports = (app) => {
 	app.use((err, req, res, next) => {

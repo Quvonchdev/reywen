@@ -4,6 +4,7 @@ const User = require('../controllers/auth-controller');
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
 const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
+const checkRoles = require('../middlewares/roles-middleware');
 
 const commonMiddlewares = [rateLimit(10, 1)];
 const authMiddleware = [authRole, rateLimit(50, 2)];
@@ -35,8 +36,8 @@ router.put(
 	[...commonMiddlewares, objectIdValidationMiddleware('userId')],
 	User.updateUser
 );
-router.get('/all', [...commonMiddlewares], User.getAllUsers);
-router.get('/roles', [...commonMiddlewares], User.getUserRoles);
+router.get('/all', [...commonMiddlewares, authRole, checkRoles(['SuperAdmin'])], User.getAllUsers);
+router.get('/roles', [...commonMiddlewares, checkRoles(['Admin'])], User.getUserRoles);
 router.get(
 	'/:userId/favorites',
 	[...commonMiddlewares, authRole, objectIdValidationMiddleware('userId')],

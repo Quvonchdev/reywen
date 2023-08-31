@@ -1,7 +1,6 @@
 const { Category } = require('../../models/post-models/category-model');
 const Joi = require('joi');
 const { User } = require('../../models/user-models/user-model');
-// const Cloudinary = require('../../utils/cloudinary');
 const ReturnResult = require('../../helpers/return-result');
 const RedisCache = require('../../utils/redis');
 const path = require('path');

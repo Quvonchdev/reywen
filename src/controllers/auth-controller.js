@@ -5,7 +5,6 @@ const { UserLog } = require('../models/user-models/user-logs-model');
 const { UserRole } = require('../models/user-models/user-role');
 const { emailTemplate } = require('../configurations/mail-template');
 const { smsTemplate } = require('../configurations/sms-template');
-const { sendMail } = require('../utils/mail');
 const SmsEskiz = require('../utils/sms');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const { UserFavorites } = require('../models/user-models/user-favorites-model');
@@ -418,6 +417,7 @@ class UserController {
 
 		const user = await User.findOne({
 			phoneNumber,
+			_id: userId,
 		});
 
 		if (!user) {

@@ -92,24 +92,48 @@ const updateAuctionStatus = async (auctionId, status) => {
 };
 
 const findAuctionWinner = async (auction) => {
+	const findWinners = await WinnerAuction.findOne({ auction: auction._id });
+
+	if (findWinners) {
+		return;
+	}
+
 	const bidingUsers = auction.bidingUsers;
 
 	if (bidingUsers.length === 0) {
 		return;
 	}
 
-	bidingUsers.sort((a, b) => {
-		return b.price - a.price;
+	const userPriceMap = new Map();
+
+	bidingUsers.forEach(item => {
+	  if (userPriceMap.has(item.user)) {
+		userPriceMap.set(item.user, Math.max(userPriceMap.get(item.user), item.price));
+	  } else {
+		userPriceMap.set(item.user, item.price);
+	  }
 	});
+	
+	const sortedUsers = Array.from(userPriceMap.entries()).sort((a, b) => b[1] - a[1]);
+	
+	let highestBidedUsers = [];
+	for (const [user, price] of sortedUsers) {
+	  if (highestBidedUsers.length === 0 || (!highestBidedUsers.some(u => u.user === user) && highestBidedUsers.length < 2)) {
+		highestBidedUsers.push({ user, price });
+	  }
+	  if (highestBidedUsers.length === 2) {
+		break;
+	  }
+	}
 
-	const winner = bidingUsers[0];
-	const secondHighestBid = bidingUsers[1];
-
-	const findWinners = await WinnerAuction.findOne({ auction: auction._id });
-
-	if (findWinners) {
+	if(highestBidedUsers.length === 1) {
+		highestBidedUsers.push({ user: null, price: null });
+	} else if(highestBidedUsers.length === 0) {
 		return;
 	}
+
+	const winner = highestBidedUsers[0];
+	const secondHighestBid = highestBidedUsers[1];
 
 	await sendMessageToWinner(auction, winner);
 	const winnerAuction = new WinnerAuction({

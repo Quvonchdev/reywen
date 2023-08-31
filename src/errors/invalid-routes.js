@@ -1,4 +1,5 @@
 const ReturnResult = require('../helpers/return-result');
+const removeUploadedFile = require('../helpers/remove-uploaded-file');
 
 module.exports = (app) => {
 	app.use((req, res, next) => {

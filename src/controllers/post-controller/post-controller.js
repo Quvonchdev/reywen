@@ -98,6 +98,9 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
+		post.views += 1;
+		await post.save();
+
 		return res.status(200).json(ReturnResult.success(post, SUCCESS_MESSAGES.GET_POST_SUCCESS));
 	};
 
@@ -258,10 +261,19 @@ class PostController {
 			coverImage = postImages[0];
 		}
 
+		let location = null;
+		if (req.body.longitude && req.body.latitude) {
+			location = {
+				type: 'Point',
+				coordinates: [post.longitude, post.latitude],
+			};
+		}
+
 		const post = new Post({
 			...req.body,
 			coverImage,
 			postImages,
+			location,
 		});
 
 		await post.save();
@@ -325,13 +337,122 @@ class PostController {
 			}
 		}
 
-		const post = await Post.findByIdAndUpdate(postId, req.body, { new: true });
+		let location = null;
+		if (req.body.longitude && req.body.latitude) {
+			location = {
+				type: 'Point',
+				coordinates: [post.longitude, post.latitude],
+			};
+		}
+
+		const post = await Post.findByIdAndUpdate(
+			postId,
+			{
+				...req.body,
+				location,
+			},
+			{ new: true }
+		);
 
 		if (!post) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
 		return res.status(200).json(ReturnResult.success(post, SUCCESS_MESSAGES.UPDATE_POST_SUCCESS));
+	};
+
+	static updatePostCoverImage = async (req, res) => {
+		const { postId, userId } = req.params;
+
+		const user = await User.findById(userId);
+
+		if (!user) {
+			if (req.file) {
+				removeUploadedFile(req.file.path);
+			}
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
+		}
+		const post = await Post.findById(postId);
+
+		if (!post) {
+			if (req.file) {
+				removeUploadedFile(req.file.path);
+			}
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
+		}
+
+		if (post.createdBy != userId) {
+			if (req.file) {
+				removeUploadedFile(req.file.path);
+			}
+			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
+		}
+
+		let coverImage = null;
+
+		if (req.file) {
+			coverImage = path.basename(req.file.path);
+		} else {
+			return res.status(400).json(ReturnResult.errorMessage('Please upload a file'));
+		}
+
+		post.coverImage = coverImage;
+
+		await post.save();
+
+		return res
+			.status(200)
+			.json(ReturnResult.success(post, 'Post cover image updated successfully'));
+	};
+
+	static uploadMorePostImages = async (req, res) => {
+		const { postId, userId } = req.params;
+
+		const user = await User.findById(userId);
+
+		if (!user) {
+			if (req.files) {
+				for (const file of req.files) {
+					removeUploadedFile(file.path);
+				}
+			}
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
+		}
+		const post = await Post.findById(postId);
+
+		if (!post) {
+			if (req.files) {
+				for (const file of req.files) {
+					removeUploadedFile(file.path);
+				}
+			}
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
+		}
+
+		if (post.createdBy != userId) {
+			if (req.files) {
+				for (const file of req.files) {
+					removeUploadedFile(file.path);
+				}
+			}
+			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
+		}
+
+		const postImages = [];
+
+		if (req.files) {
+			for (const file of req.files) {
+				postImages.push(path.basename(file.path));
+			}
+		} else {
+			return res.status(400).json(ReturnResult.errorMessage('Please upload a file'));
+		}
+
+		// push also post.postImages
+		post.postImages.push(...postImages);
+
+		await post.save();
+		return res.status(200).json(ReturnResult.success(post, 'Post images updated successfully'));
 	};
 
 	static modifyPostByAdmin = async (req, res) => {
@@ -502,7 +623,7 @@ function buildPostsFilterQuery(filterParams) {
 	}
 
 	if (filterParams.operationType) {
-		operationType = filterParams.operationType.split(',');
+		let operationType = filterParams.operationType.split(',');
 		query.operationType = { $in: operationType };
 	}
 
@@ -511,12 +632,12 @@ function buildPostsFilterQuery(filterParams) {
 	}
 
 	if (filterParams.priceType) {
-		priceType = filterParams.priceType.split(',');
+		let priceType = filterParams.priceType.split(',');
 		query.priceType = { $in: priceType };
 	}
 
 	if (filterParams.paymentTypes) {
-		paymentTypes = filterParams.paymentTypes.split(',');
+		let paymentTypes = filterParams.paymentTypes.split(',');
 		query.paymentTypes = { $in: paymentTypes };
 	}
 
@@ -533,7 +654,7 @@ function buildPostsFilterQuery(filterParams) {
 	}
 
 	if (filterParams.facilities) {
-		facilities = filterParams.facilities.split(',');
+		let facilities = filterParams.facilities.split(',');
 		query.facilities = { $in: facilities };
 	}
 
@@ -621,7 +742,7 @@ class Validation {
 			region: Joi.string().required(),
 			zone: Joi.string().required(),
 			street: Joi.string().required().min(3).max(255),
-			latitude: Joi.number().required(),
+			location: Joi.number().required(),
 			longitude: Joi.number().required(),
 			isAddressVisible: Joi.boolean().optional(),
 
