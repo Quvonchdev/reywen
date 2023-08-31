@@ -823,6 +823,28 @@ class UserController {
 			.status(200)
 			.json(ReturnResult.successMessage('Post successfully removed from your favorites!'));
 	};
+
+	static givePermissionForUser = async (req, res) => {
+		const { userId } = req.params;
+
+		const { userRole } = req.body;
+
+		const user = await User.findById(userId);
+
+		if(!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		if(user.userRoles.includes(userRole)) {
+			return res.status(400).json(ReturnResult.errorMessage('User already have this role!'));
+		}
+
+		// push this role to user roles
+		user.userRoles.push(userRole);
+		await user.save();
+
+		return res.status(200).json(ReturnResult.successMessage('User role successfully added!'));
+	}
 }
 
 // VALIDATIONS

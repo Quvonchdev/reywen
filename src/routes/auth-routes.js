@@ -65,4 +65,10 @@ router.patch(
 	User.removeUserFavoritesPost
 );
 
+router.patch(
+	'/:userId/update-permission',
+	[...authMiddleware, checkRoles(['SuperAdmin']), objectIdValidationMiddleware('userId')],
+	User.givePermissionForUser
+);
+
 module.exports = router;
