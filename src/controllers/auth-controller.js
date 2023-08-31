@@ -901,7 +901,6 @@ function validateResetPasswordSchema(reqBody) {
 
 function validateChangePasswordSchema(reqBody) {
 	const schema = joi.object({
-		userId: joi.string().required(),
 		phoneNumber: joi.string().required(),
 		newPassword: joi.string().min(6).max(30).required(),
 		confirmNewPassword: joi.string().min(6).max(30).required(),
