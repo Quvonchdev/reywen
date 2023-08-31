@@ -438,6 +438,12 @@ class UserController {
 				.send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
 		}
 
+		if(newPassword === user.password) {
+			return res
+				.status(400)
+				.send(ReturnResult.errorMessage('New password must be different from old password'));
+		}
+
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await hashPassword(newPassword, salt);
 		const hashedConfirmPassword = await hashPassword(confirmNewPassword, salt);
