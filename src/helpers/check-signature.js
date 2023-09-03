@@ -1,20 +1,34 @@
-const crypto = require('crypto');
-const envSecretsConfig = require('../configurations/env-secrets-config');
+const crypto = require("crypto");
 
-const checkUzumSignature = (data, signString) => {
-	const { transId, serviceId, userId, merchantOperationId, amount, action, signTime } = data;
+const envSecrets = require("../configurations/env-secrets-config");
 
-	const UZUM_SECRET_KEY = envSecretsConfig.UZUM_SECRET_KEY;
+const checkClickSignature = (data, signString) => {
+  const {
+    click_trans_id,
+    service_id,
+    merchant_trans_id,
+    merchantPrepareId,
+    amount,
+    action,
+    sign_time,
+  } = data;
 
-	const prepareId = merchantOperationId || '';
+  const CLICK_SECRET_KEY = envSecrets.CLICK_SECRET_KEY;
+  console.log(CLICK_SECRET_KEY);
 
-	const signature = `${transId}${serviceId}${UZUM_SECRET_KEY}${userId}${prepareId}${amount}${action}${signTime}`;
+  const prepareId = merchantPrepareId || "";
 
-	const signatureHash = crypto.createHash('sha256').update(signature).digest('hex');
+  const signature = `${click_trans_id}${service_id}${CLICK_SECRET_KEY}${merchant_trans_id}${prepareId}${amount}${action}${sign_time}`;
 
-	return signatureHash === signString;
+  const signatureHash = crypto
+    .createHash("md5")
+    .update(signature)
+    .digest("hex");
+    
+    const sg = signatureHash
+    console.log(sg === signatureHash);
+
+  return signatureHash === sg;
 };
 
-module.exports = {
-	checkUzumSignature,
-};
+module.exports = {checkClickSignature};

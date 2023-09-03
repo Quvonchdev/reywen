@@ -1065,14 +1065,6 @@ function isAuctionStarted(startDate) {
 	return null;
 }
 
-async function checkIfAuctionIsVerified(isVerified) {
-	if (isVerified == false) {
-		return 'Auction is not verified. Please verify auction first!';
-	}
-
-	return null;
-}
-
 function buildAuctionQuery(filterParams) {
 	const query = {};
 

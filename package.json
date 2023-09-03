@@ -32,6 +32,7 @@
     "express-rate-limit": "^6.7.1",
     "express-session": "^1.17.3",
     "express-useragent": "^1.0.15",
+    "extend": "^3.0.0",
     "form-data": "^4.0.0",
     "helmet": "^7.0.0",
     "joi": "^17.9.2",

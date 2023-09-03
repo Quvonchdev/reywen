@@ -5,6 +5,9 @@ const User = require('../user-models/user-model').User;
 const { v4: uuid } = require('uuid');
 
 const auctionSchema = new mongoose.Schema({
+	auctionId: {
+		type: Number,
+	},
 	uuid: {
 		type: String,
 		default: uuid(),
@@ -90,6 +93,18 @@ const auctionSchema = new mongoose.Schema({
 		ref: Post,
 		required: true,
 	},
+});
+
+auctionSchema.pre('save', function (next) {
+    // Only increment when the document is new
+    if (this.isNew) {
+        Auction.count().then(res => {
+            this.auctionId = res; // Increment count
+            next();
+        });
+    } else {
+        next();
+    }
 });
 
 auctionSchema.plugin(require('mongoose-autopopulate'));

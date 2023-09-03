@@ -5,12 +5,15 @@ const ERROR_MESSAGES = require('./error-messages');
 const checkRoles = (roles) => async (req, res, next) => {
 	const userData = req?.userData;
 
+	console.log(userData)
+
 	if (!userData)
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 
-	const user = await User.findOne({ phoneNumber: userData?.phoneNumber });
+	const user = await User.findById(userData._id);
 
 	if (!user) {
+		console.log('user.userRoles fuck user');
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 

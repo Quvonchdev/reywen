@@ -252,4 +252,4 @@ async function seedPrices() {
 // seedCurrencyTypes();
 // seedPriceTypes();
 // seedPaymentTypes();
-// seedPrices();
+seedPrices();

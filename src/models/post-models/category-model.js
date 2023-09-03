@@ -10,6 +10,9 @@ const categorySchemas = new mongoose.Schema({
 		unique: true,
 		index: true,
 	},
+	categoryId: {
+		type: Number,
+	},
 	shortDescription: {
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
@@ -61,6 +64,18 @@ categorySchemas.pre('validate', function (next) {
 		this.slug = generateSlag(this.name);
 	}
 	next();
+});
+
+categorySchemas.pre('save', function (next) {
+    // Only increment when the document is new
+    if (this.isNew) {
+        Category.count().then(res => {
+            this.categoryId = res; // Increment count
+            next();
+        });
+    } else {
+        next();
+    }
 });
 
 const Category = primaryDatabase.model('Category', categorySchemas);

@@ -20,12 +20,14 @@ module.exports = async function authRole(req, res, next) {
 	const decodedToken = verifyAccessToken(accessToken, JWT_SECRET_KEY);
 
 	if (!verifyDecodedTokenExists(decodedToken)) {
+		console.log('user de');
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
 	const user = await User.findById(decodedToken._id);
 
 	if (!user) {
+		console.log('user real');
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
@@ -38,6 +40,7 @@ module.exports = async function authRole(req, res, next) {
 	}
 
 	if (!user.userRoles.includes('User')) {
+		console.log('user.userRoles fuck');
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 

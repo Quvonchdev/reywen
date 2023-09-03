@@ -15,6 +15,9 @@ const District = require('../address-models/district-model').District;
 const Zone = require('../address-models/zone-model').Zone;
 
 const postSchema = new mongoose.Schema({
+	postId: {
+		type: Number,
+	},
 	uuid: {
 		type: String,
 		default: uuid(),
@@ -259,6 +262,19 @@ postSchema.pre('validate', function (next) {
 	}
 	next();
 });
+
+postSchema.pre('save', function (next) {
+    // Only increment when the document is new
+    if (this.isNew) {
+        Post.count().then(res => {
+            this.postId = res; // Increment count
+            next();
+        });
+    } else {
+        next();
+    }
+});
+
 
 postSchema.plugin(require('mongoose-autopopulate'));
 const Post = primaryDatabase.model('Post', postSchema);
