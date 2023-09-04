@@ -265,7 +265,7 @@ class PostController {
 		if (req.body.longitude && req.body.latitude) {
 			location = {
 				type: 'Point',
-				coordinates: [post.longitude, post.latitude],
+				coordinates: [req.body.longitude, req.body.latitude],
 			};
 		}
 
