@@ -742,7 +742,7 @@ class Validation {
 			region: Joi.string().required(),
 			zone: Joi.string().required(),
 			street: Joi.string().required().min(3).max(255),
-			location: Joi.number().required(),
+			latitude: Joi.number().required(),
 			longitude: Joi.number().required(),
 			isAddressVisible: Joi.boolean().optional(),
 
