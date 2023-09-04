@@ -2,7 +2,7 @@ const { Post } = require('../models/post-models/post-model');
 const { User } = require('../models/user-models/user-model');
 const ReturnResult = require('../helpers/return-result');
 const { Auction } = require('../models/auction-models/auction-model');
-const { transactionModel } = require('../models/post-models/transaction-model');
+const { transactionModel } = require('../models/transaction-models/transaction-model');
 const { Prices } = require('../models/post-models/prices-model');
 
 const {

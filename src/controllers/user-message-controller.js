@@ -1,5 +1,5 @@
 const { User } = require('../models/user-models/user-model');
-const { UserMessage } = require('../models/user-models/user-message-model');
+const { UserMessage } = require('../models/chat-models/user-message-model');
 const ReturnResult = require('../helpers/return-result');
 
 const SUCCESS_MESSAGES = {

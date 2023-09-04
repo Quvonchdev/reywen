@@ -8,6 +8,7 @@ const winnerAuctionSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: Auction,
 		required: true,
+		index: true,
 	},
 	winners: [
 		{
@@ -35,6 +36,5 @@ const winnerAuctionSchema = new mongoose.Schema({
 	},
 });
 
-winnerAuctionSchema.index({ auction: 1 }, { unique: true });
 const WinnerAuction = auctionDatabase.model('WinnerAuction', winnerAuctionSchema);
 exports.WinnerAuction = WinnerAuction;

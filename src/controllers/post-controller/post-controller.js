@@ -1,7 +1,7 @@
 const { Post } = require('../../models/post-models/post-model');
 const Joi = require('joi');
 const { User } = require('../../models/user-models/user-model');
-const { UserMessage } = require('../../models/user-models/user-message-model');
+const { UserMessage } = require('../../models/chat-models/user-message-model');
 const ReturnResult = require('../../helpers/return-result');
 const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 const Telegram = require('../../utils/telegram');

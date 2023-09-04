@@ -1,7 +1,7 @@
 const { User } = require('../models/user-models/user-model');
 const ReturnResult = require('../helpers/return-result');
 const { VerifyCode } = require('../models/user-models/verify-user-model');
-const { UserLog } = require('../models/user-models/user-logs-model');
+const { UserLog } = require('../models/log-models/user-logs-model');
 const { UserRole } = require('../models/user-models/user-role');
 const { emailTemplate } = require('../configurations/mail-template');
 const { smsTemplate } = require('../configurations/sms-template');

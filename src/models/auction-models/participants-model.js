@@ -8,11 +8,13 @@ const auctionSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: Auction,
 		required: true,
+		index: true
 	},
 	user: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: User,
 		required: true,
+		index: true,
 	},
 	isParticipating: {
 		type: Boolean,
@@ -22,7 +24,7 @@ const auctionSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	isVerified: {
+	isPayed: {
 		type: Boolean,
 		default: false,
 	},
@@ -32,6 +34,5 @@ const auctionSchema = new mongoose.Schema({
 	},
 });
 
-auctionSchema.index({ auction: 1, user: 1 }, { unique: true });
 const Participant = auctionDatabase.model('Participant', auctionSchema);
 exports.Participant = Participant;
