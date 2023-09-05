@@ -18,7 +18,6 @@ class TransactionController {
 
         const { click_trans_id, service_id, merchant_trans_id, error, error_note,  amount, action, sign_time, sign_string, click_paydoc_id } = req.body;
 
-          console.log(req.body, "body");
 
             const signatureData = {
                 click_trans_id,
@@ -57,33 +56,16 @@ class TransactionController {
                 ))
             }
 
-            const isAlreadyPaid = await transactionModel.findOne({
-                merchant_trans_id: merchant_trans_id,
-                status: TransactionStatus.Paid,
-            })
 
-            console.log(isAlreadyPaid, "isPaid");
+            const user = await User.findById(merchant_trans_id);
 
-            if (isAlreadyPaid) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.AlreadyPaid,
-                        error_note: "Already paid",
-                    },
-                    "Already paid"
-                ))
-            }
-
-            const post = await Post.findById(merchant_trans_id);
-            const auction = await Auction.findById(merchant_trans_id);
-
-            if(!post && !auction) {
+            if(!user) {
                 return res.status(400).json(ReturnResult.error(
                     {
                         error: ClickError.BadRequest,
-                        error_note: "Not found",
+                        error_note: "User Not found",
                     },
-                    "Not found"
+                    "User not found"
                 ))
             }
 
@@ -135,7 +117,7 @@ class TransactionController {
 
     static completeTransaction = async (req, res) => {
 
-        const { click_trans_id, service_id, merchant_trans_id, error, error_note,  amount, action, sign_time, sign_string, click_paydoc_id, prepare_id = 1693620895033 } = req.body;
+        const { click_trans_id, service_id, merchant_trans_id, error, error_note,  amount, action, sign_time, sign_string, click_paydoc_id, merchant_prepare_id } = req.body;
 
         const signatureData = {
             click_trans_id,
@@ -144,19 +126,21 @@ class TransactionController {
             amount: amount,
             action: action,
             sign_time: sign_time,
-            prepare_id: prepare_id,
+            merchantPrepareId: merchant_prepare_id,
         };
+
+        console.log(signatureData, "signature");
       
-          const checkSignature = checkClickSignature(signatureData, sign_string);
-          if (!checkSignature) {
-            return res.status(400).json(ReturnResult.error({
-              error: ClickError.SignFailed,
-              error_note: "Invalid sign",
-            }, "Invalid sign"));
-          }
+        const checkSignature = checkClickSignature(signatureData, sign_string);
+        if (!checkSignature) {
+          return res.status(400).json(ReturnResult.error({
+            error: ClickError.SignFailed,
+            error_note: "Invalid sign",
+          }, "Invalid sign"));
+        }
 
           console.log(parseInt(action), "action");
-          console.log(prepare_id, "prepareId");
+          console.log(merchant_prepare_id, "prepareId");
 
           if(parseInt(action) !== ClickAction.Complete) {
             return res.status(400).json(ReturnResult.error({
@@ -165,19 +149,20 @@ class TransactionController {
             }, "Action not found"));
           }
 
+            const user = await User.findById(merchant_trans_id);
 
-            const post = await Post.findById(merchant_trans_id);
-            const auction = await Auction.findById(merchant_trans_id);
-
-            if (!post && !auction) {
-                return res.status(400).json(ReturnResult.error({
-                    error: ClickError.BadRequest,
-                    error_note: "Not found",
-                }, "Not found"));
+            if(!user) {
+                return res.status(400).json(ReturnResult.error(
+                    {
+                        error: ClickError.BadRequest,
+                        error_note: "User Not found",
+                    },
+                    "User not found"
+                ))
             }
 
             const isPrepared = await transactionModel.findOne({
-                prepare_id: prepare_id
+                prepare_id: merchant_prepare_id
             });
 
             if (!isPrepared) {
@@ -185,28 +170,6 @@ class TransactionController {
                     error: ClickError.TransactionNotFound,
                     error_note: "Transaction not found",
                 }, "Transaction not found"));
-            }
-
-            const isAlreadyPaid = await transactionModel.findOne({
-                userId: merchant_trans_id,
-                status: TransactionStatus.Paid,
-            })
-
-            if (isAlreadyPaid) {
-                return  res.status(400).json(ReturnResult.error({
-                    error: ClickError.AlreadyPaid,
-                    error_note: "Already paid",
-                }, "Already paid"));
-            }
-
-            const prices = await Prices.find().sort({ createdAt: -1 }).limit(1);
-
-            // check if prices exist
-            if (!prices) {
-                return res.status(400).json(ReturnResult.error({
-                    error: ClickError.BadRequest,
-                    error_note: "Prices not found",
-                }, "Prices not found"));
             }
 
             const transaction = await transactionModel.findOne({
@@ -261,6 +224,9 @@ class TransactionController {
                 error: ClickError.Success,
                 error_note: "Success",
             }
+
+            user.balance += amount;
+            await user.save();
 
             return res.status(200).json(ReturnResult.success(
                 returnResult,

@@ -4,10 +4,6 @@ const { v4: uuid } = require('uuid');
 const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 const User = require('../user-models/user-model').User;
 const Category = require('../post-models/category-model').Category;
-const OperationType = require('../post-models/operation-type-model').OperationType;
-const CurrencyType = require('../post-models/currency-type-model').CurrencyType;
-const PriceType = require('../post-models/price-type-model').PriceType;
-const PaymentType = require('../post-models/payment-type-model').PaymentType;
 
 const Country = require('../address-models/country-model').Country;
 const Region = require('../address-models/regions-model').Region;
@@ -45,40 +41,26 @@ const postSchema = new mongoose.Schema({
 		autopopulate: true,
 		required: true,
 	},
-	operationType: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: OperationType,
-			autopopulate: true,
-			required: true,
-		},
-	],
-	currencyType: {
+	operationType: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: CurrencyType,
-		autopopulate: true,
-		required: true,
+		default: null,
 	},
-	priceType: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: PriceType,
-			autopopulate: true,
-			required: true,
-		},
-	],
+	currencyType: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	priceType: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	paymentTypes: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
 	price: {
 		type: Number,
 		required: true,
 	},
-	paymentTypes: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: PaymentType,
-			autopopulate: true,
-			required: true,
-		},
-	],
 	facilities: {
 		type: mongoose.Schema.Types.Mixed,
 		default: null,

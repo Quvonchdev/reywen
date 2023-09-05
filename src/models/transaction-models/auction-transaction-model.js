@@ -18,7 +18,7 @@ const transactionPostSchema = new mongoose.Schema({
         required: true,
     },
     paymentType: {
-        type: String,
+        type: mongoose.Schema.Types.Mixed,
         required: true,
     },
     createdAt: {
@@ -30,7 +30,7 @@ const transactionPostSchema = new mongoose.Schema({
         default: false,
     },
 },{
-    collection: 'transactionPost',
+    collection: 'transactionAuction',
     timestamps: true,
 })
 
