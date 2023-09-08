@@ -18,6 +18,7 @@ class TransactionController {
 		});
 
 		await orderTransaction.save();
+
 		const returnUrl = envSecrets.CLIENT_REDIRECT_URL + orderTransaction._id;
 		const url = generate_url(orderTransaction._id, amount, returnUrl);
 		return res.status(200).json(ReturnResult.success(url, 'Click URL generated successfully'));
