@@ -1,28 +1,25 @@
-const ClickError = {
-	Success: 0,
-	SignFailed: -1,
-	InvalidAmount: -2,
-	ActionNotFound: -3,
-	AlreadyPaid: -4,
-	UserNotFound: -5,
-	TransactionNotFound: -6,
-	BadRequest: -8,
-	TransactionCanceled: -9,
-  };
-  
-const ClickAction = {
-	Prepare: 0,
-	Complete: 1,
-  };
-  
-const TransactionStatus = {
-	Pending: "PENDING",
-	Paid: "PAID",
-	Canceled: "CANCELED",
-  };
+// Define status constants as JavaScript variables
+const TRANSACTION_CONSTANTS = {
+	INVALID_AMOUNT: -2,
+	INVALID_ACTION: -4,
+	TRANSACTION_NOT_FOUND: -6,
+	ORDER_NOT_FOUND: -5,
+	PREPARE: '0',
+	COMPLETE: '1',
+	A_LACK_OF_MONEY: '-5017',
+	A_LACK_OF_MONEY_CODE: -9,
+	AUTHORIZATION_FAIL: 'AUTHORIZATION_FAIL',
+	AUTHORIZATION_FAIL_CODE: -1,
+	ORDER_FOUND: true,
+};
 
-  module.exports = {
-	ClickError,
-	ClickAction,
-	TransactionStatus,
-  }
+const TRANSACTION_ENUMS = {
+	PROCESSING: 'processing',
+	FINISHED: 'finished',
+	CANCELED: 'canceled',
+};
+
+module.exports = {
+	TRANSACTION_CONSTANTS,
+	TRANSACTION_ENUMS,
+};

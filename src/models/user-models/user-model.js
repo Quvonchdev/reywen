@@ -4,9 +4,6 @@ const userDatabase = require('../../connections/database-connections/user-db-con
 
 const userSchema = new mongoose.Schema(
 	{
-		userId: {
-			type: Number,
-		},
 		uuid: {
 			type: String,
 			default: uuid(),
@@ -79,18 +76,6 @@ const userSchema = new mongoose.Schema(
 		timestamps: true,
 	}
 );
-
-userSchema.pre('save', function (next) {
-    // Only increment when the document is new
-    if (this.isNew) {
-        User.count().then(res => {
-            this.userId = res; // Increment count
-            next();
-        });
-    } else {
-        next();
-    }
-});
 
 const User = userDatabase.model('User', userSchema);
 exports.User = User;

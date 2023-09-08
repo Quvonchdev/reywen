@@ -1,41 +1,27 @@
-const crypto = require("crypto");
+const envSecrets = require('../configurations/env-secrets-config');
+const crypto = require('crypto');
 
-const envSecrets = require("../configurations/env-secrets-config");
+function authorization(data) {
+	let click_trans_id = data.click_trans_id;
+	let amount = data.amount;
+	let action = data.action;
+	let sign_time = data.sign_time;
+	let sign_string = data.sign_string;
+	let merchant_trans_id = data.merchant_trans_id;
+	let merchant_prepare_id = data.merchant_prepare_id || null;
 
-const checkClickSignature = (data, sign_string) => {
-  const {
-    click_trans_id,
-    service_id,
-    merchant_trans_id,
-    merchantPrepareId,
-    amount,
-    action,
-    sign_time,
-  } = data;
+	const { CLICK_SERVICE_ID, CLICK_SECRET_KEY } = envSecrets;
 
-  console.log(data, "data");
+	let text = `${click_trans_id}${CLICK_SERVICE_ID}${CLICK_SECRET_KEY}${merchant_trans_id}`;
 
-  const CLICK_SECRET_KEY = envSecrets.CLICK_SECRET_KEY;
+	if (merchant_prepare_id !== '' && merchant_prepare_id !== null) {
+		text += `${merchant_prepare_id}`;
+	}
+	text += `${amount}${action}${sign_time}`;
 
-  console.log(CLICK_SECRET_KEY, "CLICK_SECRET_KEY");
+	const encoded_hash = crypto.createHash('md5').update(text, 'utf-8').digest('hex');
 
-  const prepareId = merchantPrepareId || "";
+	return encoded_hash === sign_string;
+}
 
-// Concatenate the parameters
-const signString = `${click_trans_id}${service_id}${CLICK_SECRET_KEY}${merchant_trans_id}${prepareId}${amount}${action}${sign_time}`;
-
-// Calculate the MD5 hash
-const signatureHash = crypto
-  .createHash('md5')
-  .update(signString)
-  .digest('hex');
-
-    
-  console.log(signatureHash, "signatureHash");
-  console.log(sign_string, "sign_string");
-
-  // return signatureHash === sign_string;
-  return true;
-};
-
-module.exports = {checkClickSignature};
+exports.authorization = authorization;

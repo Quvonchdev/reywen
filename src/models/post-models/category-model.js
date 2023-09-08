@@ -67,15 +67,15 @@ categorySchemas.pre('validate', function (next) {
 });
 
 categorySchemas.pre('save', function (next) {
-    // Only increment when the document is new
-    if (this.isNew) {
-        Category.count().then(res => {
-            this.categoryId = res; // Increment count
-            next();
-        });
-    } else {
-        next();
-    }
+	// Only increment when the document is new
+	if (this.isNew) {
+		Category.count().then((res) => {
+			this.categoryId = res; // Increment count
+			next();
+		});
+	} else {
+		next();
+	}
 });
 
 const Category = primaryDatabase.model('Category', categorySchemas);

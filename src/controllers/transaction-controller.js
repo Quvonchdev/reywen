@@ -1,238 +1,199 @@
-const { Post } = require('../models/post-models/post-model');
 const { User } = require('../models/user-models/user-model');
-const ReturnResult = require('../helpers/return-result');
-const { Auction } = require('../models/auction-models/auction-model');
 const { transactionModel } = require('../models/transaction-models/transaction-model');
-const { Prices } = require('../models/post-models/prices-model');
+const { userTransactionModel } = require('../models/transaction-models/user-transaction-model');
+const { authorization } = require('../helpers/check-signature');
+const envSecrets = require('../configurations/env-secrets-config');
+const ReturnResult = require('../helpers/return-result');
 
-const {
-    ClickError,
-    ClickAction,
-    TransactionStatus,
-    } = require("../enums/transaction-enum");
-
-const { checkClickSignature } = require("../helpers/check-signature");
+const { TRANSACTION_CONSTANTS, TRANSACTION_ENUMS } = require('../enums/transaction-enum');
+const { isValidObjectId } = require('mongoose');
 
 class TransactionController {
-    static prepareTransaction = async (req, res) => {
+	static generateUrl = async (req, res) => {
+		const { amount, user_id } = req.body;
 
-        const { click_trans_id, service_id, merchant_trans_id, error, error_note,  amount, action, sign_time, sign_string, click_paydoc_id } = req.body;
+		const orderTransaction = new userTransactionModel({
+			amount,
+			user_id: user_id,
+		});
 
+		await orderTransaction.save();
+		const returnUrl = 'http://localhost:3000/';
+		const url = generate_url(orderTransaction._id, amount, returnUrl);
+		return res.status(200).json(ReturnResult.success(url, 'Click URL generated successfully'));
+	};
 
-            const signatureData = {
-                click_trans_id,
-                service_id,
-                merchant_trans_id,
-                amount: amount,
-                action: action,
-                sign_time: sign_time,
-            };
+	static prepare = async (req, res) => {
+		const data = {
+			click_trans_id: req.body?.click_trans_id,
+			service_id: req.body?.service_id,
+			amount: req.body?.amount,
+			action: req.body?.action,
+			sign_time: req.body?.sign_time,
+			sign_string: req.body?.sign_string,
+			merchant_trans_id: req.body?.merchant_trans_id,
+			merchant_prepare_id: req.body?.merchant_prepare_id,
+			error: req.body?.error,
+			error_note: req.body?.error_note,
+			click_paydoc_id: req.body?.click_paydoc_id,
+		};
 
-            console.log(signatureData, "signature");
+		if (authorization(data) == false) {
+			return res.json({
+				error: TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE,
+				error_note: TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL,
+			});
+		}
 
-            const checkSignature = checkClickSignature(signatureData, sign_string);
+		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
 
-            console.log(checkSignature, "check");
+		if (isTransactionAvailable == true) {
+			const new_transaction = new transactionModel({
+				click_trans_id: data.click_trans_id,
+				merchant_trans_id: data.merchant_trans_id,
+				amount: data.amount,
+				action: TRANSACTION_CONSTANTS.PREPARE,
+				sign_string: data.sign_string,
+				sign_datetime: data.sign_time,
+			});
 
-            if (!checkSignature) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.SignFailed,
-                        error_note: "Invalid sign",
-                    },
-                    "Invalid sign"
-                ));
-            }
+			await new_transaction.save();
 
-            console.log(parseInt(action, "action"));
+			data.merchant_prepare_id = new_transaction._id;
 
-            if (parseInt(action) !== ClickAction.Prepare) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.ActionNotFound,
-                        error_note: "Action not found",
-                    },
-                    "Action not found"
-                ))
-            }
+			return res.json(data);
+		} else {
+			return res.json({
+				error: isTransactionAvailable,
+			});
+		}
+	};
 
+	static complete = async (req, res) => {
+		const data = {
+			click_trans_id: req.body?.click_trans_id,
+			service_id: req.body?.service_id,
+			amount: req.body?.amount,
+			action: req.body?.action,
+			sign_time: req.body?.sign_time,
+			sign_string: req.body?.sign_string,
+			merchant_trans_id: req.body?.merchant_trans_id,
+			merchant_prepare_id: req.body?.merchant_prepare_id,
+			error: req.body?.error,
+			error_note: req.body?.error_note,
+			click_paydoc_id: req.body?.click_paydoc_id,
+		};
 
-            const user = await User.findById(merchant_trans_id);
+		if (authorization(data) == false) {
+			return res.json({
+				error: TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE,
+				error_note: TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL,
+			});
+		}
 
-            if(!user) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.BadRequest,
-                        error_note: "User Not found",
-                    },
-                    "User not found"
-                ))
-            }
+		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
 
-            const transaction = await transactionModel.findOne({
-                transId: click_trans_id,
-            });
+		if (isTransactionAvailable == true) {
+			try {
+				const transaction = await transactionModel.findById(data.merchant_prepare_id);
 
-            console.log(transaction);
+				if (data.error == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
+					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
+					transaction.action = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY;
+					transaction.status = TRANSACTION_ENUMS.CANCELED;
+					transaction.save();
 
-            if (transaction && transaction.status === TransactionStatus.Canceled) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.TransactionCanceled,
-                        error_note: "Transaction canceled",
-                    },
-                    "Transaction canceled"
-                ))
-            }
+					return res.json(data);
+				}
 
-            const time = new Date().getTime();
+				if (transaction.action == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
+					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
+					return res.json(data);
+				}
 
-            const newTransaction = new transactionModel({
-                transId: click_trans_id,
-                merchant_trans_id: merchant_trans_id,
-                status: TransactionStatus.Pending,
-                create_time: time,
-                amount,
-                prepare_id: time,
-            });
+				if (transaction.action == data.action) {
+					data.error = TRANSACTION_CONSTANTS.INVALID_ACTION;
+					return res.json(data);
+				}
 
-            console.log(newTransaction);
+				if (transaction.amount != data.amount) {
+					data.error = TRANSACTION_CONSTANTS.INVALID_AMOUNT;
+					return res.json(data);
+				}
 
-            await newTransaction.save();
+				transaction.action = data.action;
+				transaction.status = TRANSACTION_ENUMS.FINISHED;
+				transaction.save();
 
-            const returnResult = {
-                click_trans_id: click_trans_id,
-                merchant_trans_id: merchant_trans_id,
-                merchant_prepare_id: time,
-                error: ClickError.Success,
-                error_note: "Success",
-            }
-            
-            return res.status(200).json(ReturnResult.success(
-                returnResult,
-                "Successfully prepared transaction"
-            ))
+				data.merchant_confirm_id = transaction._id;
 
-    };
+				const orderTransaction = await userTransactionModel.findOne({
+					_id: transaction.merchant_trans_id,
+				});
 
-    static completeTransaction = async (req, res) => {
+				orderTransaction.isPaid = true;
+				orderTransaction.save();
 
-        const { click_trans_id, service_id, merchant_trans_id, error, error_note,  amount, action, sign_time, sign_string, click_paydoc_id, merchant_prepare_id } = req.body;
+				await User.findOneAndUpdate(
+					{
+						_id: orderTransaction.user_id,
+					},
+					{
+						$inc: {
+							balance: orderTransaction.amount,
+						},
+					},
+					{
+						new: true,
+					}
+				);
 
-        const signatureData = {
-            click_trans_id,
-            service_id,
-            merchant_trans_id,
-            amount: amount,
-            action: action,
-            sign_time: sign_time,
-            merchantPrepareId: merchant_prepare_id,
-        };
+				return res.json(data);
+			} catch (error) {
+				data.error = TRANSACTION_CONSTANTS.TRANSACTION_NOT_FOUND;
+				return res.json(data);
+			}
+		} else {
+			return res.json({
+				error: isTransactionAvailable,
+			});
+		}
+	};
+}
 
-        console.log(signatureData, "signature");
-      
-        const checkSignature = checkClickSignature(signatureData, sign_string);
-        if (!checkSignature) {
-          return res.status(400).json(ReturnResult.error({
-            error: ClickError.SignFailed,
-            error_note: "Invalid sign",
-          }, "Invalid sign"));
-        }
+async function checkTransaction(order_id, amount) {
+	if (order_id) {
+		if (isValidObjectId(order_id) == false) {
+			return TRANSACTION_CONSTANTS.ORDER_NOT_FOUND;
+		}
 
-          console.log(parseInt(action), "action");
-          console.log(merchant_prepare_id, "prepareId");
+		const transaction = await userTransactionModel.findOne({ _id: order_id });
 
-          if(parseInt(action) !== ClickAction.Complete) {
-            return res.status(400).json(ReturnResult.error({
-                error: ClickError.ActionNotFound,
-                error_note: "Action not found",
-            }, "Action not found"));
-          }
+		if (!transaction) {
+			return TRANSACTION_CONSTANTS.ORDER_NOT_FOUND;
+		}
 
-            const user = await User.findById(merchant_trans_id);
+		if (parseInt(transaction.amount) === parseInt(amount)) {
+			return TRANSACTION_CONSTANTS.ORDER_FOUND;
+		} else {
+			return TRANSACTION_CONSTANTS.INVALID_AMOUNT;
+		}
+	} else {
+		return TRANSACTION_CONSTANTS.ORDER_NOT_FOUND;
+	}
+}
 
-            if(!user) {
-                return res.status(400).json(ReturnResult.error(
-                    {
-                        error: ClickError.BadRequest,
-                        error_note: "User Not found",
-                    },
-                    "User not found"
-                ))
-            }
+function generate_url(order_id, amount, return_url = null) {
+	const SERVICE_ID = envSecrets.CLICK_SERVICE_ID;
+	const MERCHANT_ID = envSecrets.CLICK_MERCHANT_ID;
 
-            const isPrepared = await transactionModel.findOne({
-                prepare_id: merchant_prepare_id
-            });
+	let URL = `https://my.click.uz/services/pay?service_id=${SERVICE_ID}&merchant_id=${MERCHANT_ID}&amount=${amount}&transaction_param=${order_id}`;
 
-            if (!isPrepared) {
-                return res.status(400).json(ReturnResult.error({
-                    error: ClickError.TransactionNotFound,
-                    error_note: "Transaction not found",
-                }, "Transaction not found"));
-            }
+	if (return_url) {
+		URL += `&return_url=${return_url}`;
+	}
 
-            const transaction = await transactionModel.findOne({
-                transId: click_trans_id,
-            });
-
-            console.log(transaction);
-
-            if (transaction && transaction.status === TransactionStatus.Canceled) {
-                return res.status(400).json(ReturnResult.error({
-                    error: ClickError.TransactionCanceled,
-                    error_note: "Transaction canceled",
-                }, "Transaction canceled"));
-            }
-
-            const time = new Date().getTime();
-
-            if(error < 0) {
-                await transactionModel.updateOne(
-                    {
-                        transId: click_trans_id,
-                    },
-                    {
-                        status: TransactionStatus.Canceled,
-                        cancel_time: time,
-                    }
-                );
-
-                return res.status(404).json(ReturnResult.error(
-                    {
-                        error: ClickError.TransactionNotFound,
-                        error_note: "Transaction not found",
-                    },
-                    "Transaction not found"
-                ))
-            }
-
-            await transactionModel.updateOne(
-                {
-                    transId: click_trans_id,
-                },
-                {
-                    status: TransactionStatus.Paid,
-                    perform_time: time,
-                }
-            )
-
-            const returnResult = {
-                click_trans_id: click_trans_id,
-                merchant_trans_id: merchant_trans_id,
-                merchant_confirm_id: time,
-                error: ClickError.Success,
-                error_note: "Success",
-            }
-
-            user.balance += amount;
-            await user.save();
-
-            return res.status(200).json(ReturnResult.success(
-                returnResult,
-                "Successfully completed transaction"
-            ));
-    }
+	return URL;
 }
 
 module.exports = TransactionController;

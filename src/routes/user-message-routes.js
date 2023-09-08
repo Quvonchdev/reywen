@@ -67,6 +67,6 @@ router.delete(
 	'/auction/:messageId/:userId',
 	[...commonMiddleware, objectIdValidationMiddleware('messageId')],
 	AuctionChatController.deleteMessageByUser
-)
+);
 
 module.exports = router;

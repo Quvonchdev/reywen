@@ -416,7 +416,7 @@ class UserController {
 		const { phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
 
 		const user = await User.findOne({
-			phoneNumber
+			phoneNumber,
 		});
 
 		if (!user) {
@@ -438,7 +438,7 @@ class UserController {
 				.send(ReturnResult.errorMessage('New password and Confirm new password must be the same'));
 		}
 
-		if(newPassword === user.password) {
+		if (newPassword === user.password) {
 			return res
 				.status(400)
 				.send(ReturnResult.errorMessage('New password must be different from old password'));
@@ -840,11 +840,11 @@ class UserController {
 
 		const user = await User.findById(userId);
 
-		if(!user) {
+		if (!user) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		if(user.userRoles.includes(userRole)) {
+		if (user.userRoles.includes(userRole)) {
 			return res.status(400).json(ReturnResult.errorMessage('User already have this role!'));
 		}
 
@@ -853,7 +853,7 @@ class UserController {
 		await user.save();
 
 		return res.status(200).json(ReturnResult.successMessage('User role successfully added!'));
-	}
+	};
 }
 
 // VALIDATIONS

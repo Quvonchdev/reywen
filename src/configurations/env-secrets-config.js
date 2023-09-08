@@ -53,4 +53,7 @@ module.exports = {
 	BASE_URL: process.env.BASE_URL,
 
 	CLICK_SECRET_KEY: process.env.CLICK_SECRET_KEY,
+	CLICK_SERVICE_ID: process.env.CLICK_SERVICE_ID,
+	CLICK_MERCHANT_USER_ID: process.env.CLICK_MERCHANT_USER_ID,
+	CLICK_MERCHANT_ID: process.env.CLICK_MERCHANT_ID,
 };

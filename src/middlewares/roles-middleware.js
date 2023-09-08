@@ -5,7 +5,7 @@ const ERROR_MESSAGES = require('./error-messages');
 const checkRoles = (roles) => async (req, res, next) => {
 	const userData = req?.userData;
 
-	console.log(userData)
+	console.log(userData);
 
 	if (!userData)
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));

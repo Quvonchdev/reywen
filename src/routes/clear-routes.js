@@ -15,7 +15,6 @@ router.get('/clear-cache', async (req, res, next) => {
 });
 
 router.get('/drop-db', async (req, res, next) => {
-	
 	await primaryDatabase.dropDatabase();
 	await chatDatabase.dropDatabase();
 	await logsDatabase.dropDatabase();
