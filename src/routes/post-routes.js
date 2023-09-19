@@ -58,7 +58,6 @@ router.put(
 		...commonMiddleware,
 		authRole,
 		objectIdValidationMiddleware('postId'),
-		objectIdValidationMiddleware('postId'),
 	],
 	PostController.updatePostByUser
 );
@@ -68,7 +67,6 @@ router.put(
 	[
 		...commonMiddleware,
 		authRole,
-		objectIdValidationMiddleware('postId'),
 		objectIdValidationMiddleware('postId'),
 		upload.single('file'),
 	],
@@ -81,7 +79,6 @@ router.put(
 		...commonMiddleware,
 		authRole,
 		objectIdValidationMiddleware('postId'),
-		objectIdValidationMiddleware('postId'),
 		upload.single('files'),
 	],
 	PostController.uploadMorePostImages
@@ -93,7 +90,6 @@ router.delete(
 		...commonMiddleware,
 		authRole,
 		objectIdValidationMiddleware('postId'),
-		objectIdValidationMiddleware('postId'),
 	],
 	PostController.deletePostByUser
 );
@@ -103,7 +99,6 @@ router.delete(
 		...commonMiddleware,
 		authRole,
 		checkRoles(['Admin', 'SuperAdmin']),
-		objectIdValidationMiddleware('postId'),
 		objectIdValidationMiddleware('postId'),
 	],
 	PostController.deletePostByAdmin

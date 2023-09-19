@@ -19,27 +19,6 @@ router.get(
 	Category.getCategory
 );
 
-// for Admin
-router.get(
-	'/private/',
-	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
-	Category.getCategoriesByPaginationForAdmin
-);
-router.get(
-	'/private/all',
-	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
-	Category.getCategoriesForAdmin
-);
-router.get(
-	'/private/single/:categoryId',
-	[
-		...commonMiddleware,
-		authRole,
-		checkRoles(['Admin']),
-		objectIdValidationMiddleware('categoryId'),
-	],
-	Category.getCategoryForAdmin
-);
 router.post(
 	'/',
 	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin']), upload.single('file')],
@@ -50,7 +29,7 @@ router.delete(
 	[
 		...commonMiddleware,
 		authRole,
-		checkRoles(['Admin']),
+		checkRoles(['Admin', 'SuperAdmin']),
 		objectIdValidationMiddleware('categoryId'),
 	],
 	Category.deleteCategory
@@ -65,7 +44,7 @@ router.delete(
 	[
 		...commonMiddleware,
 		authRole,
-		checkRoles(['Admin']),
+		checkRoles(['Admin', 'SuperAdmin']),
 		objectIdValidationMiddleware('categoryId'),
 	],
 	Category.deleteCategoryCoverImage

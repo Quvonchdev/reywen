@@ -12,8 +12,8 @@ module.exports = (app) => {
 	require('../connections/database-connections/primary-db-connection');
 	require('../connections/database-connections/chat-db-connection');
 	require('../connections/database-connections/user-db-connection');
-	require('../connections/database-connections/logs-db-connection');
 	require('../connections/database-connections/auction-db-connection');
+	require('../connections/database-connections/transaction-db-connection');
 
 	// Socket.io Connection
 	socketConnection.init(server);

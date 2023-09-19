@@ -1181,12 +1181,12 @@ async function sendMessageToParticipants(auctionId, message) {
 				return;
 			}
 
-			const message = new UserAuctionMessage({
+			const MESSAGE = new UserAuctionMessage({
 				user: participant.user,
 				auction: auctionId,
 				message: message,
 			});
-			await message.save();
+			await MESSAGE.save();
 		});
 	}
 }

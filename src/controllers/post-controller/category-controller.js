@@ -140,7 +140,7 @@ class CategoryController {
 		}
 
 		if (category.coverImage) {
-			fs.unlinkSync(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
+			removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
 		}
 
 		await RedisCache.flush();
@@ -177,10 +177,9 @@ class CategoryController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORIES_NOT_FOUND));
 		}
 
-		// remove cover images from multer public/images folder
 		categories.forEach((element) => {
 			if (element.coverImage) {
-				fs.unlinkSync(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${element.coverImage}`));
+				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
 			}
 		});
 
@@ -198,34 +197,6 @@ class CategoryController {
 	};
 
 	static getCategories = async (req, res) => {
-		const cachedCategories = await RedisCache.get('categories');
-
-		if (cachedCategories) {
-			return res
-				.status(200)
-				.json(
-					ReturnResult.success(
-						JSON.parse(cachedCategories),
-						SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
-						true
-					)
-				);
-		}
-
-		const categories = await Category.find().select(
-			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks'
-		);
-
-		if (categories.length > 0) {
-			await RedisCache.set('categories', JSON.stringify(categories));
-		}
-
-		return res
-			.status(200)
-			.json(ReturnResult.success(categories, SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL));
-	};
-
-	static getCategoriesForAdmin = async (req, res) => {
 		const cachedCategories = await RedisCache.get('categoriesAdmin');
 
 		if (cachedCategories) {
@@ -254,32 +225,6 @@ class CategoryController {
 	static getCategory = async (req, res) => {
 		const { categoryId } = req.params;
 
-		const cashedCategory = await RedisCache.get(`category:${categoryId}`);
-
-		if (cashedCategory) {
-			return res
-				.status(200)
-				.json(
-					ReturnResult.success(JSON.parse(cashedCategory), SUCCESS_MESSAGES.CATEGORY_FETCHED, true)
-				);
-		}
-
-		const category = await Category.findById(categoryId).select(
-			'-__v -createdAt -updatedAt -createdBy -updatedBy -clicks'
-		);
-
-		if (!category) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
-		}
-
-		await RedisCache.set(`category:${categoryId}`, JSON.stringify(category));
-
-		return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_FETCHED));
-	};
-
-	static getCategoryForAdmin = async (req, res) => {
-		const { categoryId } = req.params;
-
 		const cashedCategory = await RedisCache.get(`categoryAdmin:${categoryId}`);
 
 		if (cashedCategory) {
@@ -302,57 +247,6 @@ class CategoryController {
 	};
 
 	static getCategoriesByPagination = async (req, res) => {
-		const { error } = validateCategoryParams(req.query);
-
-		if (error) {
-			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
-		}
-
-		const { page, limit } = req.query;
-
-		const PAGE = parseInt(page);
-		const LIMIT = parseInt(limit);
-
-		const cacheCategories = await RedisCache.get(`categories:${page}:${limit}`);
-
-		if (cacheCategories) {
-			return res
-				.status(200)
-				.json(
-					ReturnResult.success(
-						JSON.parse(cacheCategories),
-						SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL,
-						true
-					)
-				);
-		}
-
-		const categories = await Category.find()
-			.select('-__v -createdAt -updatedAt -createdBy -updatedBy -clicks')
-			.limit(LIMIT * 1)
-			.skip((PAGE - 1) * LIMIT)
-			.exec();
-
-		const totalItems = await Category.countDocuments();
-
-		if (categories.length > 0) {
-			await RedisCache.set(
-				`categories:${page}:${limit}`,
-				JSON.stringify(ReturnResult.paginate(categories, totalItems, PAGE, LIMIT))
-			);
-		}
-
-		return res
-			.status(200)
-			.json(
-				ReturnResult.success(
-					ReturnResult.paginate(categories, totalItems, PAGE, LIMIT),
-					SUCCESS_MESSAGES.CATEGORY_FETCHED_ALL
-				)
-			);
-	};
-
-	static getCategoriesByPaginationForAdmin = async (req, res) => {
 		const { error } = validateCategoryParams(req.query);
 
 		if (error) {
@@ -426,9 +320,7 @@ class CategoryController {
 				.json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_COVER_IMAGE_NOT_FOUND));
 		}
 
-		const imageId = category.coverImage;
-
-		fs.unlink(`${UPLOADED_IMAGE_PATH}/${imageId}`);
+		removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
 
 		category.coverImage = null;
 

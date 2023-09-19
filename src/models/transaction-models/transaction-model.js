@@ -1,5 +1,4 @@
 const transactionDatabase = require('../../connections/database-connections/transaction-db-connection');
-const { User } = require('../user-models/user-model').User;
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema(

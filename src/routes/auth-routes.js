@@ -22,11 +22,6 @@ router.post('/change-password', [...commonMiddlewares], User.changePassword);
 router.post('/login', [...commonMiddlewares], User.login);
 
 router.get(
-	'/:userId/logs',
-	[...commonMiddlewares, objectIdValidationMiddleware('userId')],
-	User.getUserLogs
-);
-router.get(
 	'/:userId/profile',
 	[...authMiddleware, objectIdValidationMiddleware('userId')],
 	User.getUserProfile

@@ -1,8 +1,6 @@
-const error = require('../routes/error-routes');
 const auth = require('../routes/auth-routes');
 const category = require('../routes/category-routes');
 const address = require('../routes/address-routes');
-const clear = require('../routes/clear-routes');
 const types = require('../routes/type-routes');
 const prices = require('../routes/price-routes');
 const posts = require('../routes/post-routes');
@@ -19,9 +17,7 @@ module.exports = (app) => {
 	// Add routes here
 	routes_v1('user', auth);
 	routes_v1('category', category);
-	routes_v1('error', error);
 	routes_v1('address', address);
-	routes_v1('clear', clear);
 	routes_v1('types', types);
 	routes_v1('prices', prices);
 	routes_v1('posts', posts);

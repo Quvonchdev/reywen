@@ -1,7 +1,6 @@
 const primaryDatabase = require('../connections/database-connections/primary-db-connection');
 const chatDatabase = require('../connections/database-connections/chat-db-connection');
 const userDatabase = require('../connections/database-connections/user-db-connection');
-const logsDatabase = require('../connections/database-connections/logs-db-connection');
 const auctionDatabase = require('../connections/database-connections/auction-db-connection');
 const ReturnResult = require('../helpers/return-result');
 

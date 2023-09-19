@@ -1,9 +1,7 @@
 const { User } = require('../models/user-models/user-model');
 const ReturnResult = require('../helpers/return-result');
 const { VerifyCode } = require('../models/user-models/verify-user-model');
-const { UserLog } = require('../models/log-models/user-logs-model');
 const { UserRole } = require('../models/user-models/user-role');
-const { emailTemplate } = require('../configurations/mail-template');
 const { smsTemplate } = require('../configurations/sms-template');
 const SmsEskiz = require('../utils/sms');
 const envSecretsConfig = require('../configurations/env-secrets-config');
@@ -103,17 +101,12 @@ class UserController {
 			}).save();
 		}
 
-		// save user to database
 		await user.save();
-		// create access code for email verification
 		const verify_code = createVerifyCode();
 		if (verify_code) {
-			// save access code to database
 			await createAndSaveRandomVerifyCode(user._id, verify_code);
 		}
 
-		// send email verification
-		// sendMail(mailOptions(user, verify_code));
 		const smsResult = await SmsEskiz.sendMessage(
 			smsTemplate(verify_code),
 			phoneNumber,
@@ -193,7 +186,6 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		// delete all verify code of user; because we send new verify code
 		await VerifyCode.deleteMany({
 			userId: user._id,
 		});
@@ -202,15 +194,11 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_VERIFIED));
 		}
 
-		// create access code for email verification
 		const verify_code = createVerifyCode();
 
 		if (verify_code) {
-			// save access code to database
 			await createAndSaveRandomVerifyCode(user._id, verify_code);
 		}
-		// send email verification code
-		// await sendMail(mailOptions(user, verify_code));
 
 		const smsResult = await SmsEskiz.sendMessage(
 			smsTemplate(verify_code),
@@ -220,7 +208,7 @@ class UserController {
 		).then((result) => {
 			return result;
 		});
-		// return success message
+
 		return res
 			.status(200)
 			.json(
@@ -258,19 +246,6 @@ class UserController {
 				.status(400)
 				.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
 		}
-
-		const ua = req.useragent;
-
-		const userAgents = {
-			user: user._id,
-			ip: req?.ip || null,
-			device: ua?.device || null,
-			os: ua?.os || null,
-			browser: ua?.browser || null,
-		};
-
-		// save last login time
-		await new UserLog(userAgents).save();
 
 		const HOUR = 6; // hours
 		const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
@@ -470,24 +445,6 @@ class UserController {
 			.json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_PASSWORD_CHANGED));
 	};
 
-	static getUserLogs = async (req, res) => {
-		const { userId } = req.params;
-
-		const user = await User.findOne({
-			_id: userId,
-		});
-
-		if (!user) {
-			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
-		}
-
-		const logs = await UserLog.find({
-			user: user._id,
-		});
-
-		return res.status(200).json(ReturnResult.success(logs, 'user logs fetched successfully'));
-	};
-
 	static getUserProfile = async (req, res) => {
 		const { userId } = req.params;
 
@@ -589,7 +546,9 @@ class UserController {
 		}
 
 		const userRoles = await UserRole.find({});
-		await RedisCache.set('user-roles', JSON.stringify(userRoles));
+		if(userRoles.length > 0) {
+			await RedisCache.set('user-roles', JSON.stringify(userRoles));
+		}
 		return res.status(200).json(ReturnResult.success(userRoles, 'User Roles fetched successfully'));
 	};
 
@@ -941,16 +900,6 @@ function validateUserFavoritesPostSchema(reqBody) {
 	});
 
 	return schema.validate(reqBody);
-}
-
-// EMAIL DATA
-function mailOptions(user, verificationCode) {
-	return {
-		from: envSecretsConfig.GMAIL,
-		to: user.email,
-		subject: 'Email Verification',
-		html: emailTemplate(user.fullName, verificationCode, 15),
-	};
 }
 
 // CREATE VERIFY CODE AND SAVE TO DATABASE
