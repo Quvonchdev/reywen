@@ -4,7 +4,6 @@ const { User } = require('../../models/user-models/user-model');
 const ReturnResult = require('../../helpers/return-result');
 const RedisCache = require('../../utils/redis');
 const path = require('path');
-const fs = require('fs');
 const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 
 const SUCCESS_MESSAGES = {
@@ -179,7 +178,7 @@ class CategoryController {
 
 		categories.forEach((element) => {
 			if (element.coverImage) {
-				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
+				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${element.coverImage}`));
 			}
 		});
 

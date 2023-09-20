@@ -36,6 +36,7 @@ module.exports = {
 	JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
 
 	CLIENT_URL: process.env.CLIENT_URL,
+	BASE_URL: process.env.BASE_URL,
 
 	ESKIZ_SMS_EMAIL: process.env.ESKIZ_SMS_EMAIL,
 	ESKIZ_SMS_PASSWORD: process.env.ESKIZ_SMS_PASSWORD,

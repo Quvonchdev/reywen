@@ -2,6 +2,7 @@ const primaryDatabase = require('../connections/database-connections/primary-db-
 const chatDatabase = require('../connections/database-connections/chat-db-connection');
 const userDatabase = require('../connections/database-connections/user-db-connection');
 const auctionDatabase = require('../connections/database-connections/auction-db-connection');
+const transactionDatabase = require('../connections/database-connections/transaction-db-connection');
 const ReturnResult = require('../helpers/return-result');
 
 class StatisticsController {
@@ -21,11 +22,6 @@ class StatisticsController {
 		res.status(200).json(ReturnResult.success(stats, 'User database statistics'));
 	};
 
-	static logs = async (req, res) => {
-		const stats = await logsDatabase.db.stats();
-		res.status(200).json(ReturnResult.success(stats, 'Logs database statistics'));
-	};
-
 	static auction = async (req, res) => {
 		const stats = await auctionDatabase.db.stats();
 		res.status(200).json(ReturnResult.success(stats, 'Auction database statistics'));
@@ -35,8 +31,8 @@ class StatisticsController {
 		const primaryStats = await primaryDatabase.db.stats();
 		const chatStats = await chatDatabase.db.stats();
 		const userStats = await userDatabase.db.stats();
-		const logsStats = await logsDatabase.db.stats();
 		const auctionStats = await auctionDatabase.db.stats();
+		const transactionStats = await transactionDatabase.db.stats();
 
 		res.status(200).json(
 			ReturnResult.success(
@@ -44,8 +40,8 @@ class StatisticsController {
 					primaryStats,
 					chatStats,
 					userStats,
-					logsStats,
 					auctionStats,
+					transactionStats,
 				},
 				'All database statistics'
 			)

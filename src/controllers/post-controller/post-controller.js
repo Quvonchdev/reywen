@@ -6,6 +6,7 @@ const ReturnResult = require('../../helpers/return-result');
 const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 const Telegram = require('../../utils/telegram');
 const path = require('path');
+const envSecretsConfig = require('../../configurations/env-secrets-config');
 
 const SUCCESS_MESSAGES = {
 	CREATE_POST_SUCCESS: 'Post created successfully',
@@ -460,6 +461,8 @@ class PostController {
 
 		const { error } = Validation.modifyPostByAdmin(req.body);
 
+		const { message} = req.body;
+
 		if (error) {
 			if (req.files) {
 				for (const file of req.files) {
@@ -491,25 +494,20 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
-		const postImages = [
-			'https://res.cloudinary.com/arccity/image/upload/v1658999538/SuperSHOP/shoes_4_jcb1bn.png',
-			'https://res.cloudinary.com/arccity/image/upload/v1658999511/shoes_rprwir.png',
-			'https://res.cloudinary.com/arccity/image/upload/v1658999510/shoes_3_fpmamc.png',
-		];
-		// if (post.postImages) {
-		// 	for (const image of post.postImages) {
-		// 		postImages.push(`${envSecretsConfig.BASE_URL}/images/${image}`);
-		// 	}
-		// }
+		const postImages = [];
 
-		const telegramMessage = req.body.telegramMessage;
+		if (post.postImages) {
+			for (const image of post.postImages) {
+				postImages.push(`${envSecretsConfig.BASE_URL}/public/images/${image}`);
+			}
+		}
 
 		let isSendedTelegram = false;
 		if (post.isSendedTelegram == false) {
-			if (telegramMessage) {
+			if (post) {
 				const telegramMessageResult = await Telegram.sendPictures(
 					postImages,
-					telegramMessage,
+					post,
 					'https://google.com'
 				);
 				if (telegramMessageResult.error == false) {
@@ -518,14 +516,12 @@ class PostController {
 			}
 		}
 
-		const userMessage = req.body.message;
-
-		if (userMessage) {
-			const sendMessage = await UserMessage.create({
-				message: userMessage,
+		if (message) {
+			const sendMessage = await UserMessage({
+				message: message,
 				sender: req.body.modernizationBy,
 				receiver: post.createdBy,
-			});
+			})
 
 			await sendMessage.save();
 		}
