@@ -61,4 +61,16 @@ router.put(
 	Category.updateCategory
 );
 
+router.put(
+	'/cover-image/:categoryId',
+	[
+		...commonMiddleware,
+		authRole,
+		checkRoles(['Admin', 'SuperAdmin']),
+		objectIdValidationMiddleware('categoryId'),
+		upload.single('file'),
+	],
+	Category.updateCategoryCoverImage
+);
+
 module.exports = router;

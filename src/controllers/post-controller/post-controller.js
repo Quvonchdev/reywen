@@ -43,6 +43,8 @@ const ERROR_MESSAGES = {
 	NOT_FOUND_MESSAGE: 'Message not found',
 };
 
+const UPLOADED_IMAGE_PATH = '../../../public/images';
+
 class PostController {
 	static getAllPosts = async (req, res) => {
 		const posts = await Post.find();
@@ -85,7 +87,6 @@ class PostController {
 					totalItems,
 					options.page,
 					options.limit,
-					SUCCESS_MESSAGES.GET_ALL_POST_SUCCESS
 				)
 			);
 	};
@@ -103,91 +104,6 @@ class PostController {
 		await post.save();
 
 		return res.status(200).json(ReturnResult.success(post, SUCCESS_MESSAGES.GET_POST_SUCCESS));
-	};
-
-	static getPostByUser = async (req, res) => {
-		const { userId } = req.params;
-
-		const posts = await Post.find({ createdBy: userId }).sort({
-			createdAt: -1,
-		});
-
-		return res.status(200).json(ReturnResult.success(posts, SUCCESS_MESSAGES.GET_ALL_POST_SUCCESS));
-	};
-
-	static getPostByUserPagination = async (req, res) => {
-		const { page, limit } = req.query;
-		const { userId } = req.params;
-
-		const options = {
-			page: parseInt(page, 10) || 1,
-			limit: parseInt(limit, 10) || 10,
-			sort: { createdAt: -1 },
-		};
-
-		const posts = await Post.find({
-			createdBy: userId,
-		})
-			.limit(options.limit)
-			.skip(options.limit * (options.page - 1))
-			.sort(options.sort)
-			.exec();
-
-		const totalItems = await Post.countDocuments({
-			createdBy: userId,
-		});
-
-		return res
-			.status(200)
-			.json(
-				ReturnResult.paginate(
-					posts,
-					totalItems,
-					options.page,
-					options.limit,
-					SUCCESS_MESSAGES.GET_ALL_POST_SUCCESS
-				)
-			);
-	};
-
-	static getPostBySlug = async (req, res) => {
-		const { slug } = req.params;
-
-		const post = await Post.findOne({ slug });
-
-		if (!post) {
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
-		}
-
-		return res.status(200).json(ReturnResult.success(post, SUCCESS_MESSAGES.GET_POST_SUCCESS));
-	};
-
-	static getPostByCategory = async (req, res) => {
-		const { categoryId } = req.params;
-		const { page, limit } = req.query;
-
-		const options = {
-			page: parseInt(page, 10) || 1,
-			limit: parseInt(limit, 10) || 10,
-			sort: { createdAt: -1 },
-		};
-
-		const posts = await Post.find({ category: categoryId })
-			.limit(options.limit)
-			.skip(options.limit * (options.page - 1))
-			.sort(options.sort)
-			.exec();
-
-		const totalItems = await Post.countDocuments({ category: categoryId });
-
-		return res
-			.status(200)
-			.json(
-				ReturnResult.success(
-					ReturnResult.paginate(posts, totalItems, options.page, options.limit),
-					SUCCESS_MESSAGES.GET_ALL_POST_SUCCESS
-				)
-			);
 	};
 
 	static createPostByUser = async (req, res) => {
@@ -649,6 +565,10 @@ function buildPostsFilterQuery(filterParams) {
 		}
 	}
 
+	if(filterParams.status) {
+		query.status = filterParams.status;
+	}
+
 	if (filterParams.facilities) {
 		let facilities = filterParams.facilities.split(',');
 		query.facilities = { $in: facilities };
@@ -717,22 +637,13 @@ class Validation {
 			shortDescription: Joi.alternatives(Joi.string(), Joi.object()).optional(),
 			createdBy: Joi.string().required(),
 			category: Joi.string().required(),
-			operationType: Joi.array().items(Joi.string()).required(),
-			currencyType: Joi.string().required(),
+			operationType: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			currencyType: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			priceType: Joi.array().items(Joi.string()).required(),
 			price: Joi.number().required(),
 			paymentTypes: Joi.array().items(Joi.string()).required(),
-			facilities: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).required(),
-			fullInfo: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).required(),
-
+			facilities: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			fullInfo: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			country: Joi.string().required(),
 			district: Joi.string().required(),
 			region: Joi.string().required(),
@@ -742,15 +653,11 @@ class Validation {
 			longitude: Joi.number().required(),
 			isAddressVisible: Joi.boolean().optional(),
 
-			contactPhone: Joi.string().optional(),
-			contactEmail: Joi.string().email().optional(),
-			contactName: Joi.string().optional(),
-			contactAddress: Joi.string().optional(),
-			socialContacts: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).optional(),
+			contactPhone: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactEmail: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactName: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactAddress: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			socialContacts: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			isContactVisible: Joi.boolean().optional(),
 		});
 

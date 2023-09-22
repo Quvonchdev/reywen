@@ -12,6 +12,16 @@ class TransactionController {
 	static generateUrl = async (req, res) => {
 		const { amount, user_id } = req.body;
 
+		if(isValidObjectId(user_id) == false) {
+			return res.status(400).json(ReturnResult.errorMessage("Invalid user id"));
+		}
+
+		const user = await User.findById(user_id);
+
+		if (!user) {
+			return res.status(400).json(ReturnResult.errorMessage(TRANSACTION_CONSTANTS.USER_NOT_FOUND));
+		}
+
 		const orderTransaction = new userTransactionModel({
 			amount,
 			user_id: user_id,
@@ -20,13 +30,11 @@ class TransactionController {
 		await orderTransaction.save();
 
 		const returnUrl = envSecrets.CLIENT_REDIRECT_URL + orderTransaction._id;
-		const url = generate_url(orderTransaction._id, amount, returnUrl);
+		const url = await generate_url(orderTransaction._id, amount, returnUrl);
 		return res.status(200).json(ReturnResult.success(url, 'Click URL generated successfully'));
 	};
 
 	static prepare = async (req, res) => {
-		console.log(req.body, "prepare body")
-		console.log(req, "prepare body")
 		const data = {
 			click_trans_id: req.body?.click_trans_id,
 			service_id: req.body?.service_id,
@@ -41,8 +49,6 @@ class TransactionController {
 			click_paydoc_id: req.body?.click_paydoc_id,
 		};
 
-		console.log(data, "data prepare")
-
 		if (authorization(data) == false) {
 
 			data.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
@@ -51,11 +57,7 @@ class TransactionController {
 			return res.json(data);
 		}
 
-		console.log(authorization(data), "auth prepare")
-
 		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
-
-		console.log(isTransactionAvailable, "isTransactionAvailable prepare")
 
 		if (isTransactionAvailable == true) {
 			const new_transaction = new transactionModel({
@@ -71,7 +73,6 @@ class TransactionController {
 
 			data.merchant_prepare_id = new_transaction._id;
 
-			console.log(data, "data prepare")
 			return res.json(data);
 		} else {
 			return res.json({
@@ -81,9 +82,6 @@ class TransactionController {
 	};
 
 	static complete = async (req, res) => {
-		console.log(req.body, "complete body")
-		console.log(req, "complete body")
-
 		const data = {
 			click_trans_id: req.body?.click_trans_id,
 			service_id: req.body?.service_id,
@@ -98,25 +96,17 @@ class TransactionController {
 			click_paydoc_id: req.body?.click_paydoc_id,
 		};
 
-		console.log(data, "data complete")
-
 		if (authorization(data) == false) {
 			data.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
 			data.error_note = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL;
 			return res.json(data);
 		}
 
-		console.log(authorization(data), "auth complete")
-
 		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
-
-		console.log(isTransactionAvailable, "isTransactionAvailable complete")
 
 		if (isTransactionAvailable == true) {
 			try {
 				const transaction = await transactionModel.findById(data.merchant_prepare_id);
-
-				console.log(transaction, "transaction complete")
 
 				if (data.error == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
 					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
@@ -124,26 +114,22 @@ class TransactionController {
 					transaction.status = TRANSACTION_ENUMS.CANCELED;
 					transaction.save();
 
-					console.log(data, "data complete error")
 					return res.json(data);
 				}
 
 				if (transaction.action == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
 					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
 
-					console.log(data, "data complete action")
 					return res.json(data);
 				}
 
 				if (transaction.action == data.action) {
 					data.error = TRANSACTION_CONSTANTS.INVALID_ACTION;
-					console.log(data, "data complete")
 					return res.json(data);
 				}
 
 				if (transaction.amount != data.amount) {
 					data.error = TRANSACTION_CONSTANTS.INVALID_AMOUNT;
-					console.log(data, "data complete amount")
 					return res.json(data);
 				}
 
@@ -160,8 +146,6 @@ class TransactionController {
 				orderTransaction.isPaid = true;
 				orderTransaction.save();
 
-				console.log(orderTransaction, "orderTransaction complete");
-
 				await User.findOneAndUpdate(
 					{
 						_id: orderTransaction.user_id,
@@ -176,7 +160,6 @@ class TransactionController {
 					}
 				);
 
-				console.log(data, "data complete")
 				return res.json(data);
 			} catch (error) {
 				data.error = TRANSACTION_CONSTANTS.TRANSACTION_NOT_FOUND;
@@ -212,7 +195,7 @@ async function checkTransaction(order_id, amount) {
 	}
 }
 
-function generate_url(order_id, amount, return_url = null) {
+async function generate_url(order_id, amount, return_url = null) {
 	const SERVICE_ID = envSecrets.CLICK_SERVICE_ID;
 	const MERCHANT_ID = envSecrets.CLICK_MERCHANT_ID;
 

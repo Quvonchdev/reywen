@@ -9,32 +9,12 @@ const checkRoles = require('../middlewares/roles-middleware');
 
 const commonMiddleware = [rateLimit(60, 1)];
 
-router.get('/all', [...commonMiddleware, authRole], PostController.getAllPosts);
+router.get('/all', [...commonMiddleware], PostController.getAllPosts);
 router.get('/', [...commonMiddleware], PostController.getPostsByPagination);
 router.get(
 	'/:postId/single',
 	[...commonMiddleware, objectIdValidationMiddleware('postId')],
 	PostController.getPost
-);
-router.get(
-	'/:userId',
-	[...commonMiddleware, objectIdValidationMiddleware('userId')],
-	PostController.getPostByUser
-);
-router.get(
-	'/:slug',
-	[...commonMiddleware, objectIdValidationMiddleware('slug')],
-	PostController.getPostBySlug
-);
-router.get(
-	'/:userId/posts',
-	[...commonMiddleware, objectIdValidationMiddleware('userId')],
-	PostController.getPostByUserPagination
-);
-router.get(
-	'/category/:categoryId',
-	[...commonMiddleware, objectIdValidationMiddleware('categoryId')],
-	PostController.getPostByCategory
 );
 
 router.post(

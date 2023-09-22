@@ -39,7 +39,7 @@ const postSchema = new mongoose.Schema({
 		required: true,
 	},
 	operationType: {
-		type: mongoose.Schema.Types.ObjectId,
+		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
 	currencyType: {
@@ -76,30 +76,34 @@ const postSchema = new mongoose.Schema({
 	},
 	// Address
 	country: {
-		type: mongoose.Schema.Types.ObjectId,
+		type: mongoose.Schema.Types.Mixed,
 		ref: Country,
 		autopopulate: true,
+		default: null,
 	},
 	region: {
-		type: mongoose.Schema.Types.ObjectId,
+		type: mongoose.Schema.Types.Mixed,
 		ref: Region,
 		autopopulate: true,
+		default: null,
 	},
 	district: {
-		type: mongoose.Schema.Types.ObjectId,
+		type: mongoose.Schema.Types.Mixed,
 		ref: District,
 		required: true,
 		autopopulate: true,
+		default: null,
 	},
 	zone: {
-		type: mongoose.Schema.Types.ObjectId,
+		type: mongoose.Schema.Types.Mixed,
 		ref: Zone,
 		autopopulate: true,
+		default: null,
 	},
 	street: {
 		type: mongoose.Schema.Types.Mixed,
-		default: null,
 		required: true,
+		default: null,
 	},
 	location: {
 		type: {

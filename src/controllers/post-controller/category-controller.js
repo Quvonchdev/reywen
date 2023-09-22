@@ -329,6 +329,32 @@ class CategoryController {
 
 		return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_UPDATED));
 	};
+
+	static updateCategoryCoverImage = async (req, res) => {
+		const { categoryId } = req.params;
+
+		const category = await Category.findById(categoryId);
+
+		if (!category) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.CATEGORY_NOT_FOUND));
+		}
+
+		if (category.coverImage) {
+			removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${category.coverImage}`));
+		}
+
+		if(req.file) {
+			category.coverImage = path.basename(req.file.path);
+		} else {
+			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.FILE_NOT_UPLOADED));
+		}
+
+		await category.save();
+
+		await RedisCache.flush();
+
+		return res.status(200).json(ReturnResult.success(category, SUCCESS_MESSAGES.CATEGORY_UPDATED));
+	}
 }
 
 // VALIDATIONS
