@@ -49,12 +49,20 @@ class TransactionController {
 			click_paydoc_id: req.body?.click_paydoc_id,
 		};
 
+		const responseData = {
+			click_trans_id: data.click_trans_id,
+			merchant_trans_id: data.merchant_trans_id,
+			merchant_prepare_id: data.merchant_prepare_id,
+			error: data.error,
+			error_note: data.error_note,
+		}
+
 		if (authorization(data) == false) {
 
-			data.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
-			data.error_note = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL;
+			responseData.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
+			responseData.error_note = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL;
 
-			return res.json(data);
+			return res.json(responseData);
 		}
 
 		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
@@ -71,9 +79,9 @@ class TransactionController {
 
 			await new_transaction.save();
 
-			data.merchant_prepare_id = new_transaction._id;
+			responseData.merchant_prepare_id = new_transaction._id;
 
-			return res.json(data);
+			return res.json(responseData);
 		} else {
 			return res.json({
 				error: isTransactionAvailable,
@@ -96,10 +104,18 @@ class TransactionController {
 			click_paydoc_id: req.body?.click_paydoc_id,
 		};
 
+		const responseData = {
+			click_trans_id: data.click_trans_id,
+			merchant_trans_id: data.merchant_trans_id,
+			merchant_confirm_id: data.merchant_prepare_id,
+			error: data.error,
+			error_note: data.error_note,
+		}
+
 		if (authorization(data) == false) {
-			data.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
-			data.error_note = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL;
-			return res.json(data);
+			responseData.error = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL_CODE;
+			responseData.error_note = TRANSACTION_CONSTANTS.AUTHORIZATION_FAIL;
+			return res.json(responseData);
 		}
 
 		const isTransactionAvailable = await checkTransaction(data.merchant_trans_id, data.amount);
@@ -109,35 +125,37 @@ class TransactionController {
 				const transaction = await transactionModel.findById(data.merchant_prepare_id);
 
 				if (data.error == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
-					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
+					responseData.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
 					transaction.action = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY;
 					transaction.status = TRANSACTION_ENUMS.CANCELED;
 					transaction.save();
 
-					return res.json(data);
+					return res.json(responseData);
 				}
 
 				if (transaction.action == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
-					data.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
+					responseData.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
 
-					return res.json(data);
+					return res.json(responseData);
 				}
 
-				if (transaction.action == data.action) {
-					data.error = TRANSACTION_CONSTANTS.INVALID_ACTION;
-					return res.json(data);
-				}
-
+				
 				if (transaction.amount != data.amount) {
-					data.error = TRANSACTION_CONSTANTS.INVALID_AMOUNT;
+					responseData.error = TRANSACTION_CONSTANTS.INVALID_AMOUNT;
 					return res.json(data);
+				}
+				
+				
+				if (transaction.action == data.action) {
+					responseData.error = TRANSACTION_CONSTANTS.INVALID_ACTION;
+					return res.json(responseData);
 				}
 
 				transaction.action = data.action;
 				transaction.status = TRANSACTION_ENUMS.FINISHED;
 				transaction.save();
 
-				data.merchant_confirm_id = transaction._id;
+				responseData.merchant_confirm_id = transaction._id;
 
 				const orderTransaction = await userTransactionModel.findOne({
 					_id: transaction.merchant_trans_id,
@@ -160,10 +178,10 @@ class TransactionController {
 					}
 				);
 
-				return res.json(data);
+				return res.json(responseData);
 			} catch (error) {
-				data.error = TRANSACTION_CONSTANTS.TRANSACTION_NOT_FOUND;
-				return res.json(data);
+				responseData.error = TRANSACTION_CONSTANTS.TRANSACTION_NOT_FOUND;
+				return res.json(responseData);
 			}
 		} else {
 			return res.json({
