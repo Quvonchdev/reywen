@@ -1,13 +1,8 @@
 const mongoose = require('mongoose');
-const { v4: uuid } = require('uuid');
 const userDatabase = require('../../connections/database-connections/user-db-connection');
 
 const userSchema = new mongoose.Schema(
 	{
-		uuid: {
-			type: String,
-			default: uuid(),
-		},
 		fullName: {
 			type: String,
 			required: true,
@@ -43,10 +38,6 @@ const userSchema = new mongoose.Schema(
 			minlength: 3,
 			maxlength: 1024,
 		},
-		email: {
-			type: String,
-			required: false,
-		},
 		shortDescription: {
 			type: String,
 			default: null,
@@ -66,10 +57,6 @@ const userSchema = new mongoose.Schema(
 		isBlockedUser: {
 			type: Boolean,
 			default: false,
-		},
-		createdAt: {
-			type: Date,
-			default: Date.now,
 		},
 	},
 	{

@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema(
 	{
+		id: {
+			type: Number,
+		},
 		click_trans_id: {
 			type: String,
 		},
@@ -32,6 +35,17 @@ const transactionSchema = new mongoose.Schema(
 		timestamps: true,
 	}
 );
+
+transactionSchema.pre('save', function (next) {
+    if (this.isNew) {
+        transactionModel.count().then(res => {
+            this.id = res;
+            next();
+        });
+    } else {
+        next();
+    }
+});
 
 const transactionModel = transactionDatabase.model('transaction', transactionSchema);
 exports.transactionModel = transactionModel;

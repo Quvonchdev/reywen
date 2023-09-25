@@ -2,13 +2,8 @@ const mongoose = require('mongoose');
 const auctionDatabase = require('../../connections/database-connections/auction-db-connection');
 const Post = require('../post-models/post-model').Post;
 const User = require('../user-models/user-model').User;
-const { v4: uuid } = require('uuid');
 
 const auctionSchema = new mongoose.Schema({
-	uuid: {
-		type: String,
-		default: uuid(),
-	},
 	title: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
@@ -16,7 +11,6 @@ const auctionSchema = new mongoose.Schema({
 	description: {
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
-		required: false,
 	},
 	startPrice: {
 		type: Number,
@@ -47,22 +41,15 @@ const auctionSchema = new mongoose.Schema({
 		enum: ['active', 'inactive', 'completed'],
 		default: 'inactive',
 	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
 	createdBy: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: User,
 		required: true,
 	},
-	isVerified: {
-		type: Boolean,
-		default: false,
-	},
-	isPayed: {
-		type: Boolean,
-		default: false,
+	paymentStatus: {
+		type: String,
+		enum: ['pending', 'paid'],
+		default: 'pending',
 	},
 	bidingUsers: [
 		{
@@ -89,9 +76,23 @@ const auctionSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: Post,
 		required: true,
+		autopopulate: true,
 	},
+	slug: {
+		type: mongoose.Schema.Types.Mixed
+	}
+}, {
+	timestamps: true,
 });
 
 auctionSchema.plugin(require('mongoose-autopopulate'));
+
+auctionSchema.pre('validate', function (next) {
+	if (this.title) {
+		this.slug = this.title;
+	}
+	next();
+});
+
 const Auction = auctionDatabase.model('Auction', auctionSchema);
 exports.Auction = Auction;

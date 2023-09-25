@@ -22,18 +22,12 @@ const winnerAuctionSchema = new mongoose.Schema({
 			},
 		},
 	],
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
 	isVerified: {
 		type: Boolean,
 		default: false,
 	},
-	status: {
-		type: Boolean,
-		default: false,
-	},
+}, {
+	timestamps: true,
 });
 
 const WinnerAuction = auctionDatabase.model('WinnerAuction', winnerAuctionSchema);

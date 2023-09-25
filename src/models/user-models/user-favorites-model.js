@@ -24,7 +24,10 @@ const userSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: User,
 		required: true,
+		index: true,
 	},
+}, {
+	timestamps: true,
 });
 userSchema.plugin(require('mongoose-autopopulate'));
 const UserFavorites = userDatabase.model('UserFavorites', userSchema);

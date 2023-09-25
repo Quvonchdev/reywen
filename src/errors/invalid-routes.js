@@ -5,7 +5,7 @@ module.exports = (app) => {
 	app.use((req, res, next) => {
 		if (req.file) {
 			removeUploadedFile(req.file.path);
-		} else if (req.files) {
+		} else if (req.files && req.files.length > 0) {
 			for (const file of req.files) {
 				removeUploadedFile(file.path);
 			}

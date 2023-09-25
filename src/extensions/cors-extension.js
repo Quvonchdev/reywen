@@ -15,7 +15,6 @@ module.exports = (app) => {
 	}
 
 	app.use(
-		// cors settings url : https://www.npmjs.com/package/cors
 		cors({
 			origin: origins,
 			methods: ['GET', 'POST', 'PUT', 'DELETE'],

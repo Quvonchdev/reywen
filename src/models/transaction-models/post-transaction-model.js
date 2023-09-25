@@ -18,18 +18,6 @@ const transactionPostSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		paymentType: {
-			type: mongoose.Schema.Types.Mixed,
-			required: true,
-		},
-		createdAt: {
-			type: Date,
-			default: Date.now,
-		},
-		status: {
-			type: Boolean,
-			default: false,
-		},
 	},
 	{
 		collection: 'transactionPost',

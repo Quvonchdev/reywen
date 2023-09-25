@@ -4,7 +4,7 @@ const app = express();
 const commonMiddlewaresExtensions = require('./src/extensions/common-middlewares-extension');
 const corsMiddlewareExtensions = require('./src/extensions/cors-extension');
 const helmetMiddlewareExtensions = require('./src/extensions/helmet-extension');
-const routesMiddlewareExtensions = require('./src/extensions/routes-extension');
+const routes_v1 = require('./src/extensions/routes-extentions/v1');
 
 const internalError = require('./src/errors/internal-server');
 const invalidRoute = require('./src/errors/invalid-routes');
@@ -28,7 +28,7 @@ corsMiddlewareExtensions(app);
 
 helmetMiddlewareExtensions(app);
 
-routesMiddlewareExtensions(app);
+routes_v1(app);
 
 // Multer error handling
 multerErrors(app);

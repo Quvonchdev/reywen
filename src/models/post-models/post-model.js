@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const generateSlag = require('../../helpers/slug-generator');
-const { v4: uuid } = require('uuid');
 const primaryDatabase = require('../../connections/database-connections/primary-db-connection');
 const User = require('../user-models/user-model').User;
 const Category = require('../post-models/category-model').Category;
@@ -11,10 +9,6 @@ const District = require('../address-models/district-model').District;
 const Zone = require('../address-models/zone-model').Zone;
 
 const postSchema = new mongoose.Schema({
-	uuid: {
-		type: String,
-		default: uuid(),
-	},
 	title: {
 		type: mongoose.Schema.Types.Mixed,
 		required: true,
@@ -38,19 +32,8 @@ const postSchema = new mongoose.Schema({
 		autopopulate: true,
 		required: true,
 	},
-	operationType: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	currencyType: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	priceType: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	paymentTypes: {
+	tags: {
+		// price type, payment type, currency type, operation type and etc.
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
@@ -70,159 +53,103 @@ const postSchema = new mongoose.Schema({
 		index: true,
 	},
 	fullInfo: {
+		// for editor
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 		required: true,
 	},
 	// Address
-	country: {
-		type: mongoose.Schema.Types.Mixed,
-		ref: Country,
-		autopopulate: true,
-		default: null,
+	address: {
+		country: {
+			type: mongoose.Schema.Types.Mixed,
+			ref: Country,
+			autopopulate: true,
+			default: null,
+		},
+		region: {
+			type: mongoose.Schema.Types.Mixed,
+			ref: Region,
+			autopopulate: true,
+			default: null,
+		},
+		district: {
+			type: mongoose.Schema.Types.Mixed,
+			ref: District,
+			autopopulate: true,
+			default: null,
+		},
+		zone: {
+			type: mongoose.Schema.Types.Mixed,
+			ref: Zone,
+			autopopulate: true,
+			default: null,
+		},
+		street: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		location: {
+			type: Array,
+			default: [],
+		},
+		isAddressVisible: {
+			type: Boolean,
+			default: true,
+		}
 	},
-	region: {
-		type: mongoose.Schema.Types.Mixed,
-		ref: Region,
-		autopopulate: true,
-		default: null,
+	contact: {
+		contactPhone: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		contactEmail: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		contactAddress: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		socialContacts: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		isContactVisible: {
+			type: Boolean,
+			default: true,
+		}
 	},
-	district: {
-		type: mongoose.Schema.Types.Mixed,
-		ref: District,
-		required: true,
-		autopopulate: true,
-		default: null,
-	},
-	zone: {
-		type: mongoose.Schema.Types.Mixed,
-		ref: Zone,
-		autopopulate: true,
-		default: null,
-	},
-	street: {
-		type: mongoose.Schema.Types.Mixed,
-		required: true,
-		default: null,
-	},
-	location: {
-		type: {
+	modernization: {
+		modernizationComment: {
 			type: String,
-			enum: ['Point'],
-			default: 'Point',
+			default: null,
 		},
-		coordinates: {
-			type: [Number],
+		modernizationBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: User,
+			default: null,
 		},
-	},
-	isAddressVisible: {
-		type: Boolean,
-		default: true,
-	},
-	// Contact
-	contactPhone: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	contactEmail: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	contactAddress: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	socialContacts: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	isContactVisible: {
-		type: Boolean,
-		default: true,
-	},
-	// User panel
-	createdByAt: {
-		type: Date,
-		default: Date.now,
-	},
-	createdBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: User,
-		required: true,
-	},
-	updatedAt: {
-		type: Date,
-		default: null,
-	},
-	updatedBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: User,
-		default: null,
-	},
-	// Admin panel
-	modernizationStatus: {
-		type: String,
-		enum: ['pending', 'approved', 'rejected'],
-		default: 'pending',
-	},
-	modernizationComment: {
-		type: String,
-		default: null,
-	},
-	modernizationBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: User,
-		default: null,
-	},
-	isUrgently: {
-		type: Boolean,
-		default: false,
-	},
-	expiredUrgentlyAt: {
-		type: Date,
-		default: null,
-	},
-	isPremium: {
-		type: Boolean,
-		default: false,
-	},
-	expiredPremiumAt: {
-		type: Date,
-		default: null,
-	},
-	isVip: {
-		type: Boolean,
-		default: false,
-	},
-	expiredVipAt: {
-		type: Date,
-		default: null,
-	},
-	isTop: {
-		type: Boolean,
-		default: false,
-	},
-	expiredTopAt: {
-		type: Date,
-		default: null,
-	},
-	// Telegram
-	isSendedTelegram: {
-		type: Boolean,
-		default: false,
-	},
-	telegramMessage: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	telegramSendedAt: {
-		type: Date,
-		default: null,
-	},
-	telegramSendedBy: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: User,
-		default: null,
+		premium: {
+			type: mongoose.Schema.Types.Mixed,
+			default: {},
+		},
+		isSendedTelegram: {
+			type: Boolean,
+			default: false,
+		},
+		telegramMessage: {
+			type: mongoose.Schema.Types.Mixed,
+			default: null,
+		},
+		telegramSendedAt: {
+			type: Date,
+			default: null,
+		},
+		telegramSendedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: User,
+			default: null,
+		},
 	},
 	views: {
 		type: Number,
@@ -232,15 +159,28 @@ const postSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false,
 	},
-	status: {
-		type: Boolean,
-		default: true,
+	createdBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: User,
+		required: true,
 	},
+	updatedBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: User,
+		default: null,
+	},
+	status: {
+		type: String,
+		enum: ['pending', 'approved', 'rejected'],
+		default: 'pending',
+	}
+}, {
+	timestamps: true,
 });
 
 postSchema.pre('validate', function (next) {
 	if (this.title) {
-		this.slug = generateSlag(this.title);
+		this.slug = this.title;
 	}
 	next();
 });

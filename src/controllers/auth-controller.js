@@ -1,7 +1,6 @@
 const { User } = require('../models/user-models/user-model');
 const ReturnResult = require('../helpers/return-result');
 const { VerifyCode } = require('../models/user-models/verify-user-model');
-const { UserRole } = require('../models/user-models/user-role');
 const { smsTemplate } = require('../configurations/sms-template');
 const SmsEskiz = require('../utils/sms');
 const envSecretsConfig = require('../configurations/env-secrets-config');
@@ -11,7 +10,6 @@ const bcrypt = require('bcrypt');
 const joi = require('joi');
 const jwt = require('jsonwebtoken');
 const randomstring = require('randomstring');
-const RedisCache = require('../utils/redis');
 
 const SUCCESS_MESSAGES = {
 	USER_REGISTERED: 'User registered successfully. Please verify your account!',
@@ -76,47 +74,25 @@ class UserController {
 				.json(ReturnResult.errorMessage('Password and Confirm Password must be the same'));
 		}
 
-		const salt = await bcrypt.genSalt(10);
-		const hashedPassword = await hashPassword(password, salt);
-		const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
+		const hashedPassword = await hashPassword(password);
+		const hashedConfirmPassword = await hashPassword(confirmPassword);
 
 		const avatar = createAvatar(fullName);
 
 		const user = new User({
-			fullName: fullName,
+			fullName,
+			phoneNumber,
+			shortDescription,
 			password: hashedPassword,
 			confirmPassword: hashedConfirmPassword,
-			phoneNumber: phoneNumber,
 			coverImage: avatar,
-			shortDescription: shortDescription,
 		});
-
-		const userFavorites = await UserFavorites.findOne({
-			userId: user._id,
-		});
-
-		if (!userFavorites) {
-			await new UserFavorites({
-				userId: user._id,
-			}).save();
-		}
 
 		await user.save();
-		const verify_code = createVerifyCode();
-		if (verify_code) {
-			await createAndSaveRandomVerifyCode(user._id, verify_code);
-		}
+		await createUserFavorite(user._id)
+		await generateCodeAndSaveIt(user._id)
 
-		const smsResult = await SmsEskiz.sendMessage(
-			smsTemplate(verify_code),
-			phoneNumber,
-			4546,
-			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
-		).then((result) => {
-			return result;
-		});
-
-		const returnData = {
+		return res.status(200).json(ReturnResult.success({
 			_id: user._id,
 			fullName: user.fullName,
 			phoneNumber: user.phoneNumber,
@@ -124,13 +100,7 @@ class UserController {
 			isVerified: user.isVerified,
 			shortDescription: user.shortDescription,
 			userRoles: user.userRoles,
-		};
-
-		const resultMessage = {
-			data: SUCCESS_MESSAGES.USER_REGISTERED,
-			smsResult: smsResult.message,
-		};
-		return res.status(200).json(ReturnResult.success(returnData, resultMessage));
+		}, "User registered successfully!"));
 	};
 
 	static verifyAccount = async (req, res) => {
@@ -162,9 +132,7 @@ class UserController {
 
 		user.isVerified = true;
 		await user.save();
-		await VerifyCode.deleteMany({
-			userId: userId,
-		});
+		await deleteVerifyCodes(user._id)
 
 		return res.status(200).json(ReturnResult.successMessage(SUCCESS_MESSAGES.USER_VERIFIED));
 	};
@@ -178,36 +146,19 @@ class UserController {
 
 		const { phoneNumber } = req.body;
 
-		const user = await User.findOne({
-			phoneNumber,
-		});
+		const user = await User.findOne({phoneNumber});
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		await VerifyCode.deleteMany({
-			userId: user._id,
-		});
-
+		await deleteVerifyCodes(user._id)
+		
 		if (user.isVerified) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_VERIFIED));
 		}
 
-		const verify_code = createVerifyCode();
-
-		if (verify_code) {
-			await createAndSaveRandomVerifyCode(user._id, verify_code);
-		}
-
-		const smsResult = await SmsEskiz.sendMessage(
-			smsTemplate(verify_code),
-			phoneNumber,
-			envSecretsConfig.ESKIZ_NICK,
-			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
-		).then((result) => {
-			return result;
-		});
+		await generateCodeAndSaveIt(user._id);
 
 		return res
 			.status(200)
@@ -247,8 +198,8 @@ class UserController {
 				.send(ReturnResult.errorMessage(ERROR_MESSAGES.LOGIN_OR_PASSWORD_INCORRECT));
 		}
 
-		const HOUR = 6; // hours
-		const expiredAt = Date.now() + HOUR * 60 * 60 * 1000; // hours in milliseconds
+		const HOUR = 6;
+		const expiredAt = Date.now() + HOUR * 60 * 60 * 1000;
 
 		const token = generateJwtToken(user);
 
@@ -286,45 +237,18 @@ class UserController {
 
 		const { phoneNumber } = req.body;
 
-		const user = await User.findOne({
-			phoneNumber,
-		});
+		const user = await User.findOne({phoneNumber});
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		// delete all verify code of user; because we send new verify code
-		await VerifyCode.deleteMany({
-			userId: user._id,
-		});
+		await deleteVerifyCodes(user._id);
+		await generateCodeAndSaveIt(user._id);
 
-		// create access code for email verification
-		const verify_code = createVerifyCode();
-
-		if (verify_code) {
-			// save access code to database
-			await createAndSaveRandomVerifyCode(user._id, verify_code);
-		}
-		// send email verification code
-		// await sendMail(mailOptions(user, verify_code));
-
-		const smsResult = await SmsEskiz.sendMessage(
-			smsTemplate(verify_code),
-			phoneNumber,
-			envSecretsConfig.ESKIZ_NICK,
-			`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${user._id}`
-		).then((result) => {
-			return result;
-		});
-		// return success message
 		return res
 			.status(200)
-			.json(
-				ReturnResult.successMessage(
-					`${SUCCESS_MESSAGES.VERIFICATION_CODE_SENT}. ${smsResult.message}`
-				)
-			);
+			.json(ReturnResult.successMessage(SUCCESS_MESSAGES.VERIFICATION_CODE_SENT));
 	};
 
 	static resetPassword = async (req, res) => {
@@ -336,9 +260,7 @@ class UserController {
 
 		const { phoneNumber, password, confirmPassword, verifyCode } = req.body;
 
-		const user = await User.findOne({
-			phoneNumber,
-		});
+		const user = await User.findOne({phoneNumber});
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
@@ -360,9 +282,8 @@ class UserController {
 			return res.status(400).send(ReturnResult.error(ERROR_MESSAGES.VERIFY_CODE_NOT_FOUND));
 		}
 
-		const salt = await bcrypt.genSalt(10);
-		const hashedPassword = await hashPassword(password, salt);
-		const hashedConfirmPassword = await hashPassword(confirmPassword, salt);
+		const hashedPassword = await hashPassword(password);
+		const hashedConfirmPassword = await hashPassword(confirmPassword);
 
 		await User.updateOne(
 			{
@@ -374,9 +295,7 @@ class UserController {
 			}
 		);
 
-		await VerifyCode.deleteMany({
-			userId: user._id,
-		});
+		await deleteVerifyCodes(user._id)
 
 		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_PASSWORD_RESET));
 	};
@@ -390,9 +309,7 @@ class UserController {
 
 		const { phoneNumber, newPassword, confirmNewPassword, verifyCode } = req.body;
 
-		const user = await User.findOne({
-			phoneNumber,
-		});
+		const user = await User.findOne({phoneNumber});
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
@@ -419,9 +336,8 @@ class UserController {
 				.send(ReturnResult.errorMessage('New password must be different from old password'));
 		}
 
-		const salt = await bcrypt.genSalt(10);
-		const hashedPassword = await hashPassword(newPassword, salt);
-		const hashedConfirmPassword = await hashPassword(confirmNewPassword, salt);
+		const hashedPassword = await hashPassword(newPassword);
+		const hashedConfirmPassword = await hashPassword(confirmNewPassword);
 
 		await User.updateOne(
 			{
@@ -436,9 +352,7 @@ class UserController {
 			}
 		);
 
-		await VerifyCode.deleteMany({
-			userId: user._id,
-		});
+		await deleteVerifyCodes(user._id);
 
 		return res
 			.status(200)
@@ -448,22 +362,27 @@ class UserController {
 	static getUserProfile = async (req, res) => {
 		const { userId } = req.params;
 
-		const user = await User.findOne({
-			_id: userId,
-		}).select('-password -confirmPassword');
+		const user = await User
+							.findOne({_id: userId})
+							.select('-password -confirmPassword');
 
 		if (!user) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const isMatchUserId = req.userData?._id;
+		const token = req.headers?.authorization?.split(' ')[1];
 
-		if (
-			!isMatchUserId ||
-			isMatchUserId == undefined ||
-			isMatchUserId == null ||
-			isMatchUserId !== userId
-		) {
+		if(!token) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const decodedToken = jwt.verify(accessToken, envSecretsConfig.JWT_SECRET_KEY)
+
+		if(!decodedToken) {
+			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		if(user._id !== decodedToken._id) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
@@ -476,18 +395,8 @@ class UserController {
 			userFavorites: null,
 		};
 
-		if (userFavorites) {
-			result.userFavorites = userFavorites;
-		} else {
-			const usrFavorite = new UserFavorites({
-				userId: user._id,
-			});
-			await usrFavorite.save();
-			result.userFavorites = {
-				categoryFavorites: usrFavorite.categoryFavorites,
-				postFavorites: usrFavorite.postFavorites,
-			};
-		}
+		result.userFavorites = userFavorites;
+		
 
 		return res.status(200).json(ReturnResult.success(result, 'user fetched successfully'));
 	};
@@ -534,24 +443,6 @@ class UserController {
 		return res.status(200).json(ReturnResult.success(SUCCESS_MESSAGES.USER_UPDATED));
 	};
 
-	static getUserRoles = async (req, res) => {
-		const cachedUserRoles = await RedisCache.get('user-roles');
-
-		if (cachedUserRoles) {
-			return res
-				.status(200)
-				.json(
-					ReturnResult.success(JSON.parse(cachedUserRoles), 'User Roles fetched successfully', true)
-				);
-		}
-
-		const userRoles = await UserRole.find({});
-		if(userRoles.length > 0) {
-			await RedisCache.set('user-roles', JSON.stringify(userRoles));
-		}
-		return res.status(200).json(ReturnResult.success(userRoles, 'User Roles fetched successfully'));
-	};
-
 	static updateUserFavoritesCategory = async (req, res) => {
 		const { error } = validateUserFavoritesCategorySchema(req.body);
 
@@ -578,30 +469,6 @@ class UserController {
 			return res
 				.status(400)
 				.json(ReturnResult.errorMessage('Category already exist in your favorites!'));
-		}
-
-		if (!findFavorites) {
-			const favorites = new UserFavorites({
-				userId,
-			});
-
-			await favorites.save();
-
-			const updateUserFavorite = await UserFavorites.findByIdAndUpdate(
-				favorites._id,
-				{
-					$push: { categoryFavorites: categoryFavorites },
-				},
-				{
-					new: true,
-				}
-			);
-
-			await updateUserFavorite.save();
-
-			return res
-				.status(200)
-				.json(ReturnResult.successMessage('Category successfully added to your favorites! 🌟'));
 		}
 
 		const addCategoryUserFavorites = await UserFavorites.findByIdAndUpdate(
@@ -647,30 +514,6 @@ class UserController {
 			return res
 				.status(400)
 				.json(ReturnResult.errorMessage('Product already exist in your favorites!'));
-		}
-
-		if (!favorites) {
-			const userFavorites = new UserFavorites({
-				userId,
-			});
-
-			await userFavorites.save();
-
-			const updateUserFavorites = await UserFavorites.findByIdAndUpdate(
-				userFavorites._id,
-				{
-					$push: { postFavorites: favoritePost },
-				},
-				{
-					new: true,
-				}
-			);
-
-			await updateUserFavorites.save();
-
-			return res
-				.status(200)
-				.json(ReturnResult.successMessage('Product successfully added to your favorites! 🌟'));
 		}
 
 		const addProductUserFavorites = await UserFavorites.findByIdAndUpdate(
@@ -910,7 +753,6 @@ async function createAndSaveRandomVerifyCode(userId, verifyCode) {
 	}).save();
 }
 
-// CREATE RANDOM VERIFY CODE FOR ACCOUNT VERIFICATION
 function createVerifyCode() {
 	return randomstring.generate({
 		length: 4,
@@ -925,7 +767,8 @@ function createAvatar(fullName) {
 }
 
 // HASH PASSWORD FOR USER
-function hashPassword(password, salt) {
+async function hashPassword(password) {
+	const salt = await bcrypt.genSalt(10);
 	return bcrypt.hash(password, salt);
 }
 
@@ -940,6 +783,43 @@ function generateJwtToken(user) {
 			expiresIn: '6h',
 		}
 	);
+}
+
+async function generateCodeAndSaveIt(userId) {
+	const verify_code = createVerifyCode();
+	if (verify_code) {
+		await createAndSaveRandomVerifyCode(userId, verify_code);
+	}
+	await sendSms(verify_code)
+}
+
+async function sendSms(verify_code) {
+	await SmsEskiz.sendMessage(
+		smsTemplate(verify_code),
+		phoneNumber,
+		4546,
+		`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${verify_code}}`
+	).then((result) => {
+		return result;
+	});
+}
+
+async function createUserFavorite(userId) {
+	const userFavorites = await UserFavorites.findOne({
+		userId: userId,
+	});
+
+	if (!userFavorites) {
+		await new UserFavorites({
+			userId: userId,
+		}).save();
+	}
+}
+
+async function deleteVerifyCodes(userId) {
+	await VerifyCode.deleteMany({
+		userId: userId,
+	});
 }
 
 module.exports = UserController;

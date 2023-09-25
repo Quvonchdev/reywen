@@ -25,6 +25,8 @@ const userMessagesSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false,
 	},
+}, {
+	timestamps: true,
 });
 
 const UserMessage = chatDatabase.model('UserMessage', userMessagesSchema);

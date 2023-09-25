@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 
 const userTransactionSchema = new mongoose.Schema(
 	{
+		id: {
+			type: Number,
+		},
 		user_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: User,
@@ -22,6 +25,17 @@ const userTransactionSchema = new mongoose.Schema(
 		timestamps: true,
 	}
 );
+
+userTransactionSchema.pre('save', function (next) {
+    if (this.isNew) {
+        userTransactionModel.count().then(res => {
+            this.id = res;
+            next();
+        });
+    } else {
+        next();
+    }
+});
 
 const userTransactionModel = transactionDatabase.model('user_transaction', userTransactionSchema);
 exports.userTransactionModel = userTransactionModel;

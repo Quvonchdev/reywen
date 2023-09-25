@@ -10,7 +10,6 @@ const checkRoles = require('../middlewares/roles-middleware');
 router.get('/all', [rateLimit(50, 1)], AuctionController.getAuctions);
 router.get('/:auctionId/single', [rateLimit(50, 1)], AuctionController.getAuction);
 router.get('/', [rateLimit(50, 1)], AuctionController.getAuctionsByPagination);
-router.get('/:auctionId/user/:userId', [rateLimit(50, 1)], AuctionController.getAuctionsByUserId);
 
 router.post('/', [rateLimit(10, 1), authRole], AuctionController.createAuction);
 

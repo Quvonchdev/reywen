@@ -20,18 +20,13 @@ const auctionSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false,
 	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
+	paymentStatus: {
+		type: String,
+		enum: ['pending', 'paid'],
+		default: 'pending',
 	},
-	isPayed: {
-		type: Boolean,
-		default: false,
-	},
-	status: {
-		type: Boolean,
-		default: false,
-	},
+}, {
+	timestamps: true,
 });
 
 const Participant = auctionDatabase.model('Participant', auctionSchema);

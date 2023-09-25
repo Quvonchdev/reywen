@@ -39,7 +39,6 @@ class AuctionController {
 
 		const auction = await findAuctionById(auctionId);
 
-		console.log(new Date());
 		if (!auction) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
 		}
@@ -72,30 +71,6 @@ class AuctionController {
 			.populate('createdBy', 'fullName _id phoneNumber coverImage');
 
 		const totalItems = auctions.length;
-
-		return res
-			.status(200)
-			.json(
-				ReturnResult.success(
-					ReturnResult.paginate(auctions, totalItems, PAGE, LIMIT),
-					MESSAGES.getAuctions('Auctions')
-				)
-			);
-	};
-
-	static getAuctionsByUserId = async (req, res) => {
-		const { userId } = req.params;
-		const { page, limit } = req.query;
-
-		const PAGE = parseInt(page, 10) || 1;
-		const LIMIT = parseInt(limit, 10) || 10;
-
-		const auctions = await Auction.find({ createdBy: userId })
-			.limit(LIMIT)
-			.skip((PAGE - 1) * LIMIT)
-			.populate('createdBy', 'fullName _id phoneNumber coverImage');
-
-		const totalItems = await Auction.countDocuments({ createdBy: userId });
 
 		return res
 			.status(200)

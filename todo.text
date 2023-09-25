@@ -5,3 +5,11 @@ TODO
 
 
   https://my.click.uz/services/pay?service_id=29108&merchant_id=21426&amount=1000&transaction_param=64f6aa2b89ac5682ea0b5cd0
+
+
+  http://localhost:3000/api/v1
+  http://159.223.76.213:4000/api/v1
+  https://uyer-uz-test-api.vercel.app
+
+    http://localhost:3000/api/v1/payment/click/prepare
+    http://localhost:3000/api/v1/payment/click/complete

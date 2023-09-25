@@ -1,32 +1,17 @@
 require('../connections/database-connections/primary-db-connection');
-require('../connections/database-connections/chat-db-connection');
-require('../connections/database-connections/user-db-connection');
-require('../connections/database-connections/logs-db-connection');
-require('../connections/database-connections/auction-db-connection');
 
 // models [src/models]
 const { Country } = require('../models/address-models/country-model');
 const { Region } = require('../models/address-models/regions-model');
 const { District } = require('../models/address-models/district-model');
 const { Zone } = require('../models/address-models/zone-model');
-const { UserRole } = require('../models/user-models/user-role');
-const { OperationType } = require('../models/post-models/operation-type-model');
-const { CurrencyType } = require('../models/post-models/currency-type-model');
-const { PriceType } = require('../models/post-models/price-type-model');
-const { PaymentType } = require('../models/post-models/payment-type-model');
-const { Prices } = require('../models/post-models/prices-model');
+
 
 // data [src/seedData/data]
 const countries = require('./data/countries.json');
 const regions = require('./data/regions.json');
 const districts = require('./data/districts.json');
 const zones = require('./data/zones.json');
-const userRoles = require('./data/user-roles.json');
-const operationTypes = require('./data/operation-types.json');
-const currencyTypes = require('./data/currency-types.json');
-const priceTypes = require('./data/price-types.json');
-const paymentTypes = require('./data/payment-types.json');
-const prices = require('./data/prices.json');
 
 // connect to database-connections [src/connections/database-connections-connection.js]
 
@@ -129,114 +114,6 @@ async function seedZones() {
 	}
 }
 
-async function seedUserRoles() {
-	try {
-		(async () => {
-			if ((await UserRole.countDocuments()) > 0) {
-				await UserRole.deleteMany({});
-			}
-
-			await UserRole.insertMany(userRoles);
-			console.log('🌱 Seed data successfully: User Roles');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
-async function seedOperationTypes() {
-	try {
-		(async () => {
-			if ((await OperationType.countDocuments()) > 0) {
-				await OperationType.deleteMany({});
-			}
-
-			await OperationType.insertMany(operationTypes);
-			console.log('🌱 Seed data successfully: Operation Types');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
-async function seedCurrencyTypes() {
-	try {
-		(async () => {
-			if ((await CurrencyType.countDocuments()) > 0) {
-				await CurrencyType.deleteMany({});
-			}
-
-			await CurrencyType.insertMany(currencyTypes);
-			console.log('🌱 Seed data successfully: CurrencyType Types');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
-async function seedPriceTypes() {
-	try {
-		(async () => {
-			if ((await PriceType.countDocuments()) > 0) {
-				await PriceType.deleteMany({});
-			}
-
-			await PriceType.insertMany(priceTypes);
-			console.log('🌱 Seed data successfully: PriceTypes');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
-async function seedPaymentTypes() {
-	try {
-		(async () => {
-			if ((await PaymentType.countDocuments()) > 0) {
-				await PaymentType.deleteMany({});
-			}
-
-			await PaymentType.insertMany(paymentTypes);
-			console.log('🌱 Seed data successfully: PriceTypes');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
-async function seedPrices() {
-	try {
-		(async () => {
-			if ((await Prices.countDocuments()) > 0) {
-				await Prices.deleteMany({});
-			}
-
-			await Prices.insertMany(prices);
-			console.log('🌱 Seed data successfully: Prices');
-			process.exit(0);
-		})();
-	} catch (err) {
-		console.log(`❌ Error: ${err.message}`);
-		console.log('Shutting down the server due to Uncaught Exception');
-		process.exit(1);
-	}
-}
-
 // seed data do it one by one. I don't recommend to you run all at once.
 // also it doesn't recommend to do it. After seeding data, don't do it again.
 // because it will delete all data and insert again!
@@ -247,9 +124,4 @@ async function seedPrices() {
 // seedRegions();
 // seedDistricts();
 // seedZones();
-// seedUserRoles();
-// seedOperationTypes();
-// seedCurrencyTypes();
-// seedPriceTypes();
-// seedPaymentTypes();
-seedPrices();
+
