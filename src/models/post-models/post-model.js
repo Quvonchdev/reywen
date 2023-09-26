@@ -8,6 +8,99 @@ const Region = require('../address-models/regions-model').Region;
 const District = require('../address-models/district-model').District;
 const Zone = require('../address-models/zone-model').Zone;
 
+const addressSchema = new mongoose.Schema({
+	country: {
+		type: mongoose.Schema.Types.Mixed,
+		ref: Country,
+		autopopulate: true,
+		default: null,
+	},
+	region: {
+		type: mongoose.Schema.Types.Mixed,
+		ref: Region,
+		autopopulate: true,
+		default: null,
+	},
+	district: {
+		type: mongoose.Schema.Types.Mixed,
+		ref: District,
+		autopopulate: true,
+		default: null,
+	},
+	zone: {
+		type: mongoose.Schema.Types.Mixed,
+		ref: Zone,
+		autopopulate: true,
+		default: null,
+	},
+	street: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	location: {
+		type: Array,
+		default: [],
+	},
+	isAddressVisible: {
+		type: Boolean,
+		default: true,
+	}
+})
+
+const modernizationSchema = new mongoose.Schema({
+	modernizationComment: {
+		type: String,
+		default: null,
+	},
+	modernizationBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: User,
+		default: null,
+	},
+	isSendedTelegram: {
+		type: Boolean,
+		default: false,
+	},
+})
+
+const contactSchema = new mongoose.Schema({
+	contactPhones: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	contactEmails: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	contactAddress: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	socialContacts: {
+		type: mongoose.Schema.Types.Mixed,
+		default: null,
+	},
+	isContactVisible: {
+		type: Boolean,
+		default: true,
+	}
+})
+
+const postPremiumSchema = new mongoose.Schema({
+	isPremium: {
+		type: Boolean,
+		default: false,
+	},
+	premiumStartedAt: {
+		type: Date,
+		default: null,
+	},
+	premiumExpiredAt: {
+		type: Date,
+		default: null,
+	}
+})
+
 const postSchema = new mongoose.Schema({
 	title: {
 		type: mongoose.Schema.Types.Mixed,
@@ -33,15 +126,15 @@ const postSchema = new mongoose.Schema({
 		required: true,
 	},
 	tags: {
-		// price type, payment type, currency type, operation type and etc.
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 	},
 	price: {
-		type: Number,
+		type: mongoose.Schema.Types.Mixed,
 		required: true,
 	},
 	facilities: {
+		// [wifi, parking, ...]
 		type: mongoose.Schema.Types.Mixed,
 		default: null,
 		required: true,
@@ -58,98 +151,18 @@ const postSchema = new mongoose.Schema({
 		default: null,
 		required: true,
 	},
-	// Address
 	address: {
-		country: {
-			type: mongoose.Schema.Types.Mixed,
-			ref: Country,
-			autopopulate: true,
-			default: null,
-		},
-		region: {
-			type: mongoose.Schema.Types.Mixed,
-			ref: Region,
-			autopopulate: true,
-			default: null,
-		},
-		district: {
-			type: mongoose.Schema.Types.Mixed,
-			ref: District,
-			autopopulate: true,
-			default: null,
-		},
-		zone: {
-			type: mongoose.Schema.Types.Mixed,
-			ref: Zone,
-			autopopulate: true,
-			default: null,
-		},
-		street: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		location: {
-			type: Array,
-			default: [],
-		},
-		isAddressVisible: {
-			type: Boolean,
-			default: true,
-		}
+		type: addressSchema,
+		required: true,
 	},
 	contact: {
-		contactPhone: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		contactEmail: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		contactAddress: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		socialContacts: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		isContactVisible: {
-			type: Boolean,
-			default: true,
-		}
+		type: contactSchema,
 	},
 	modernization: {
-		modernizationComment: {
-			type: String,
-			default: null,
-		},
-		modernizationBy: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: User,
-			default: null,
-		},
-		premium: {
-			type: mongoose.Schema.Types.Mixed,
-			default: {},
-		},
-		isSendedTelegram: {
-			type: Boolean,
-			default: false,
-		},
-		telegramMessage: {
-			type: mongoose.Schema.Types.Mixed,
-			default: null,
-		},
-		telegramSendedAt: {
-			type: Date,
-			default: null,
-		},
-		telegramSendedBy: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: User,
-			default: null,
-		},
+		type: modernizationSchema,
+	},
+	premium: {
+		type: postPremiumSchema,
 	},
 	views: {
 		type: Number,

@@ -10,7 +10,7 @@ const {
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
 const checkRoles = require('../middlewares/roles-middleware');
-const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
+const objIdValidate = require('../middlewares/objectId-validation-middleware');
 
 const middleware = [rateLimit(50, 2)];
 const authMiddleware = [authRole, checkRoles(['Admin', 'SuperAdmin'])];
@@ -27,32 +27,32 @@ router.get('/zones', [...middleware], ZoneController.getZonesPaginated);
 
 router.get(
 	'/countries/:countryId',
-	[...middleware, objectIdValidationMiddleware('countryId')],
+	[...middleware, objIdValidate('countryId')],
 	CountryController.getCountry
 );
 router.get(
 	'/regions/:regionId',
-	[...middleware, objectIdValidationMiddleware('regionId')],
+	[...middleware, objIdValidate('regionId')],
 	RegionController.getRegion
 );
 router.get(
 	'/:regionId/districts',
-	[...middleware, objectIdValidationMiddleware('regionId')],
+	[...middleware, objIdValidate('regionId')],
 	DistrictController.getDistrictByRegion
 );
 router.get(
 	'/districts/:districtId',
-	[...middleware, objectIdValidationMiddleware('districtId')],
+	[...middleware, objIdValidate('districtId')],
 	DistrictController.getDistrict
 );
 router.get(
 	'/zones/:zoneId',
-	[...middleware, objectIdValidationMiddleware('zoneId')],
+	[...middleware, objIdValidate('zoneId')],
 	ZoneController.getZone
 );
 router.get(
 	'/:districtId/zones',
-	[...middleware, objectIdValidationMiddleware('districtId')],
+	[...middleware, objIdValidate('districtId')],
 	ZoneController.getZonesByDistrict
 );
 
@@ -63,43 +63,43 @@ router.post('/zones', [...middleware, ...authMiddleware], ZoneController.createZ
 
 router.put(
 	'/countries/:countryId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('countryId')],
+	[...middleware, ...authMiddleware, objIdValidate('countryId')],
 	CountryController.updateCountry
 );
 router.put(
 	'/regions/:regionId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('regionId')],
+	[...middleware, ...authMiddleware, objIdValidate('regionId')],
 	RegionController.updateRegion
 );
 router.put(
 	'/districts/:districtId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('districtId')],
+	[...middleware, ...authMiddleware, objIdValidate('districtId')],
 	DistrictController.updateDistrict
 );
 router.put(
 	'/zones/:zoneId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('zoneId')],
+	[...middleware, ...authMiddleware, objIdValidate('zoneId')],
 	ZoneController.updateZone
 );
 
 router.delete(
 	'/countries/:countryId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('countryId')],
+	[...middleware, ...authMiddleware, objIdValidate('countryId')],
 	CountryController.deleteCountry
 );
 router.delete(
 	'/regions/:regionId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('regionId')],
+	[...middleware, ...authMiddleware, objIdValidate('regionId')],
 	RegionController.deleteRegion
 );
 router.delete(
 	'/districts/:districtId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('districtId')],
+	[...middleware, ...authMiddleware, objIdValidate('districtId')],
 	DistrictController.deleteDistrict
 );
 router.delete(
 	'/zones/:zoneId',
-	[...middleware, ...authMiddleware, objectIdValidationMiddleware('zoneId')],
+	[...middleware, ...authMiddleware, objIdValidate('zoneId')],
 	ZoneController.deleteZone
 );
 

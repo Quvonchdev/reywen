@@ -6,6 +6,7 @@ const ReturnResult = require('../../helpers/return-result');
 const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 const Telegram = require('../../utils/telegram');
 const path = require('path');
+const TransactionPost = require('../../models/transaction-models/post-transaction-model');
 const envSecretsConfig = require('../../configurations/env-secrets-config');
 
 const SUCCESS_MESSAGES = {
@@ -41,6 +42,7 @@ const ERROR_MESSAGES = {
 	NOT_PERMISSION: 'You do not have permission to do this. Please contact admin',
 	FORBIDDEN: 'You do not have permission to do this. Please contact admin',
 	NOT_FOUND_MESSAGE: 'Message not found',
+	POST_TITLE_EXISTED: 'Post title existed. Please choose another title',
 };
 
 const UPLOADED_IMAGE_PATH = '../../../public/images';
@@ -56,7 +58,7 @@ class PostController {
 
 		const options = {
 			page: parseInt(page, 10) || 1,
-			limit: parseInt(limit, 10) || 10,
+			limit: parseInt(limit, 10) || 15,
 		};
 
 		let query = {};
@@ -110,11 +112,7 @@ class PostController {
 		const { error } = Validation.createPostByUser(req.body);
 
 		if (error) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+			removeImages(req);
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
 		}
 
@@ -123,51 +121,22 @@ class PostController {
 		const user = await User.findById(createdBy);
 
 		if (!user) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+			removeImages(req);
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 
-		// if title string or object I dont know check this
 		const title = req.body.title;
 
-		if (typeof title === 'string') {
-			const checkTitle = await Post.findOne({ title });
+		const post_title = await Post.findOne({ title });
 
-			if (checkTitle) {
-				if (req.files) {
-					for (const file of req.files) {
-						removeUploadedFile(file.path);
-					}
-				}
-				return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
-			}
-		} else if (typeof title === 'object') {
-			const keys = Object.keys(title);
-			if (keys) {
-				for (const key of keys) {
-					const checkTitle = await Post.findOne({ title: title[key] });
-
-					if (checkTitle) {
-						if (req.files) {
-							for (const file of req.files) {
-								removeUploadedFile(file.path);
-							}
-						}
-						return res
-							.status(400)
-							.json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
-					}
-				}
-			}
+		if (post_title) {
+			removeImages(req);
+			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
 		}
 
 		const postImages = [];
 
-		if (req.files) {
+		if (req.files && req.files.length > 0) {
 			for (const file of req.files) {
 				postImages.push(path.basename(file.path));
 			}
@@ -178,20 +147,37 @@ class PostController {
 			coverImage = postImages[0];
 		}
 
-		let location = null;
-		if (req.body.longitude && req.body.latitude) {
-			location = {
-				type: 'Point',
-				coordinates: [req.body.longitude, req.body.latitude],
-			};
+		// create post;
+		const address = {
+			country: req.body.country,
+			region: req.body.region,
+			district: req.body.district,
+			zone: req.body.zone,
+			street: req.body.street,
+			location: req.body.location
+		}
+
+		const contact = {
+			contactPhones: req.body.contactPhones,
+			contactEmails: req.body.contactEmails,
+			contactAddress: req.body.contactAddress,
+			socialContacts: req.body.socialContacts
 		}
 
 		const post = new Post({
-			...req.body,
-			coverImage,
-			postImages,
-			location,
-		});
+			title: req.body.title,
+			shortDescription: req.body.shortDescription,
+			createdBy: req.body.createdBy,
+			category: req.body.category,
+			tags: req.body.tags,
+			price: req.body.price,
+			facilities: req.body.facilities,
+			fullInfo: req.body.fullInfo,
+			address: address,
+			contact: contact,
+			coverImage: coverImage,
+			postImages: postImages,
+		})
 
 		await post.save();
 		return res.status(201).json(ReturnResult.success(post, SUCCESS_MESSAGES.CREATE_POST_SUCCESS));
@@ -200,7 +186,7 @@ class PostController {
 	static updatePostByUser = async (req, res) => {
 		const { postId, userId } = req.params;
 
-		const { error } = Validation.updatePostByUser(req.body);
+		const { error } = Validation.createPostByUser(req.body);
 
 		if (error) {
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
@@ -212,64 +198,67 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 
-		const findPost = await Post.findById(postId);
+		const post = await Post.findById(postId);
 
-		if (!findPost) {
+		if (!post) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
-		if (findPost.createdBy !== userId) {
+		if (post.createdBy !== userId) {
 			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
 		}
 
-		const title = req.body?.title;
-
-		if (
-			title !== findPost.title &&
-			title !== undefined &&
-			title !== null &&
-			title !== '' &&
-			title !== ' ' &&
-			!title
-		) {
-			if (typeof title === 'string') {
-				const checkTitle = await Post.findOne({ title });
-
-				if (checkTitle) {
-					return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
-				}
-			} else if (typeof title === 'object') {
-				const keys = Object.keys(title);
-				if (keys) {
-					for (const key of keys) {
-						const checkTitle = await Post.findOne({ title: title[key] });
-
-						if (checkTitle) {
-							return res
-								.status(400)
-								.json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
-						}
-					}
-				}
-			}
+		if(req.body.title == post.title) {
+			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.POST_TITLE_EXISTED));
 		}
 
-		let location = null;
-		if (req.body.longitude && req.body.latitude) {
-			location = {
-				type: 'Point',
-				coordinates: [post.longitude, post.latitude],
-			};
+		const address = {
+			country: req.body.country,
+			region: req.body.region,
+			district: req.body.district,
+			zone: req.body.zone,
+			street: req.body.street,
+			location: req.body.location
 		}
 
-		const post = await Post.findByIdAndUpdate(
-			postId,
-			{
-				...req.body,
-				location,
-			},
-			{ new: true }
-		);
+		const contact = {
+			contactPhones: req.body.contactPhones,
+			contactEmails: req.body.contactEmails,
+			contactAddress: req.body.contactAddress,
+			socialContacts: req.body.socialContacts
+		}
+
+		const request = {
+			title: req.body.title,
+			shortDescription: req.body.shortDescription,
+			createdBy: req.body.createdBy,
+			category: req.body.category,
+			tags: req.body.tags,
+			price: req.body.price,
+			facilities: req.body.facilities,
+			fullInfo: req.body.fullInfo,
+			address: address,
+			contact: contact,
+			coverImage: coverImage,
+			postImages: postImages,
+		}
+
+		post.title = request.title;
+		post.shortDescription = request.shortDescription;
+		post.createdBy = request.createdBy;
+		post.category = request.category;
+		post.tags = request.tags;
+		post.price = request.price;
+		post.facilities = request.facilities;
+		post.fullInfo = request.fullInfo;
+		post.address = request.address;
+		post.contact = request.contact;
+		post.coverImage = request.coverImage;
+		post.postImages = request.postImages;
+		post.address = request.address;
+		post.contact = request.contact;
+
+		await post.save();
 
 		if (!post) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
@@ -278,86 +267,30 @@ class PostController {
 		return res.status(200).json(ReturnResult.success(post, SUCCESS_MESSAGES.UPDATE_POST_SUCCESS));
 	};
 
-	static updatePostCoverImage = async (req, res) => {
-		const { postId, userId } = req.params;
-
-		const user = await User.findById(userId);
-
-		if (!user) {
-			if (req.file) {
-				removeUploadedFile(req.file.path);
-			}
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
-		}
-		const post = await Post.findById(postId);
-
-		if (!post) {
-			if (req.file) {
-				removeUploadedFile(req.file.path);
-			}
-			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
-		}
-
-		if (post.createdBy != userId) {
-			if (req.file) {
-				removeUploadedFile(req.file.path);
-			}
-			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
-		}
-
-		let coverImage = null;
-
-		if (req.file) {
-			coverImage = path.basename(req.file.path);
-		} else {
-			return res.status(400).json(ReturnResult.errorMessage('Please upload a file'));
-		}
-
-		post.coverImage = coverImage;
-
-		await post.save();
-
-		return res
-			.status(200)
-			.json(ReturnResult.success(post, 'Post cover image updated successfully'));
-	};
-
 	static uploadMorePostImages = async (req, res) => {
 		const { postId, userId } = req.params;
 
 		const user = await User.findById(userId);
 
 		if (!user) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+			removeImages(req);
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 		const post = await Post.findById(postId);
 
 		if (!post) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+			removeImages(req);
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
 		if (post.createdBy != userId) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+			removeImages(req);
 			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
 		}
 
 		const postImages = [];
 
-		if (req.files) {
+		if (req.files && req.files.length > 0) {
 			for (const file of req.files) {
 				postImages.push(path.basename(file.path));
 			}
@@ -375,40 +308,54 @@ class PostController {
 	static modifyPostByAdmin = async (req, res) => {
 		const { postId } = req.params;
 
-		const { error } = Validation.modifyPostByAdmin(req.body);
+		const { message, modernizationBy, status, isSendTelegram} = req.body;
 
-		const { message} = req.body;
+		const schema = Joi.object({
+			message: Joi.string().allow(null).required(),
+			modernizationBy: Joi.string().required(),
+			status: Joi.string().required(),
+			isSendTelegram: Joi.boolean().required(),
+		})
+
+		const { error } = schema.validate(req.body);
 
 		if (error) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
 		}
 
-		const user = await User.findById(req.body.modernizationBy);
+		const user = await User.findById(modernizationBy);
 
-		if (!user || user.userRoles.includes('Admin') == false) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
+		if (!user || user.userRoles.includes('Admin') == false || user.userRoles.includes('SuperAdmin') == false) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 
 		const post = await Post.findById(postId);
 
 		if (!post) {
-			if (req.files) {
-				for (const file of req.files) {
-					removeUploadedFile(file.path);
-				}
-			}
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
+
+		if(status == 'rejected') {
+			post.status = status;
+			post.modernization = {
+				isSendedTelegram: false,
+				modernizationComment: message,
+				modernizationBy: modernizationBy,
+			}
+
+			await post.save();
+
+			return res.status(200).json(ReturnResult.success(post, "Post rejected successfully"));
+		}
+
+		post.status = status;
+		post.modernization = {
+			isSendedTelegram: isSendTelegram,
+			modernizationComment: message,
+			modernizationBy: modernizationBy,
+		}
+
+		await post.save();
 
 		const postImages = [];
 
@@ -418,42 +365,68 @@ class PostController {
 			}
 		}
 
-		let isSendedTelegram = false;
-		if (post.isSendedTelegram == false) {
-			if (post) {
-				const telegramMessageResult = await Telegram.sendPictures(
+		if (isSendTelegram == true) {
+			if (post && postImages && postImages.length > 0) {
+				 await Telegram.sendPictures(
 					postImages,
 					post,
 					'https://google.com'
 				);
-				if (telegramMessageResult.error == false) {
-					isSendedTelegram = true;
-				}
 			}
 		}
+	
+		const sendMessage = await UserMessage({
+			message: message,
+			sender: req.body.modernizationBy,
+			receiver: post.createdBy,
+		})
 
-		if (message) {
-			const sendMessage = await UserMessage({
-				message: message,
-				sender: req.body.modernizationBy,
-				receiver: post.createdBy,
-			})
-
-			await sendMessage.save();
-		}
-
-		const modernizationPost = await Post.findByIdAndUpdate(
-			postId,
-			{
-				...req.body,
-				isSendedTelegram,
-			},
-			{ new: true }
-		);
+		await sendMessage.save();
 
 		return res
 			.status(200)
 			.json(ReturnResult.success(modernizationPost, SUCCESS_MESSAGES.MODIFY_POST_SUCCESS));
+	};
+
+	static premiumPost = async (req, res) => {
+		const { postId, userId } = req.params;
+
+		const post = await Post.findOne({ _id: postId, createdBy: userId });
+		const user = await User.findById(userId);
+
+		if (!post) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
+		}
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
+		}
+
+		const { price } = req.body;
+		
+		if(price > user.balance) {
+			return res.status(400).json(ReturnResult.errorMessage("Your balance is not enough to pay. Please recharge your balance"));
+		}
+
+		user.balance = user.balance - price;
+		await user.save();
+
+		post.premium = {
+			isPremium: true,
+			premiumStartedAt: Date.now(),
+			premiumExpiredAt: Date.now() + 14 * 24 * 60 * 60 * 1000, // 14 days
+		}
+
+		const transaction = new TransactionPost({
+			user: userId,
+			amount: price,
+			postId: postId,
+		})
+
+		await transaction.save();
+
+		await post.save();
+		return res.status(200).json(ReturnResult.success(post, "Premium post successfully"));
 	};
 
 	static deletePostByUser = async (req, res) => {
@@ -489,7 +462,7 @@ class PostController {
 
 		const user = await User.findById(userId);
 
-		if (!user || user.userRoles.includes('Admin') == false) {
+		if (!user || user.userRoles.includes('Admin') == false || user.userRoles.includes('SuperAdmin') == false) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 
@@ -499,7 +472,7 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
-		if (post.modernizationBy == userId) {
+		if (!post.modernization && post.modernization.modernizationBy !== userId) {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_PERMISSION));
 		}
 
@@ -508,7 +481,7 @@ class PostController {
 		if (userMessage) {
 			const sendMessage = await UserMessage.create({
 				message: userMessage,
-				sender: req.body.modernizationBy,
+				sender: userId,
 				receiver: post.createdBy,
 			});
 
@@ -520,6 +493,8 @@ class PostController {
 		if (!deletePost) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
+
+		return res.status(200).json(ReturnResult.success({}, SUCCESS_MESSAGES.DELETE_POST_SUCCESS));
 	};
 }
 
@@ -637,11 +612,8 @@ class Validation {
 			shortDescription: Joi.alternatives(Joi.string(), Joi.object()).optional(),
 			createdBy: Joi.string().required(),
 			category: Joi.string().required(),
-			operationType: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
-			currencyType: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
-			priceType: Joi.array().items(Joi.string()).required(),
+			tags: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).optional(),
 			price: Joi.number().required(),
-			paymentTypes: Joi.array().items(Joi.string()).required(),
 			facilities: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			fullInfo: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			country: Joi.string().required(),
@@ -649,93 +621,23 @@ class Validation {
 			region: Joi.string().required(),
 			zone: Joi.string().required(),
 			street: Joi.string().required().min(3).max(255),
-			latitude: Joi.number().required(),
-			longitude: Joi.number().required(),
-			isAddressVisible: Joi.boolean().optional(),
+			location: Joi.number().required(),
 
-			contactPhone: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
-			contactEmail: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
-			contactName: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactPhones: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactEmails: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			contactAddress: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			socialContacts: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
-			isContactVisible: Joi.boolean().optional(),
 		});
 
 		return schema.validate(reqBody);
 	}
+}
 
-	static updatePostByUser(reqBody) {
-		const schema = Joi.object({
-			title: Joi.alternatives(Joi.string(), Joi.object()).optional(),
-			shortDescription: Joi.alternatives(Joi.string(), Joi.object()).optional(),
-			createdBy: Joi.string().required(),
-			category: Joi.string().optional(),
-			operationType: Joi.array().items(Joi.string()).optional(),
-			currencyType: Joi.string().optional(),
-			priceType: Joi.array().items(Joi.string()).optional(),
-			price: Joi.number().optional(),
-			paymentTypes: Joi.array().items(Joi.string()).optional(),
-			facilities: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).optional(),
-			fullInfo: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).optional(),
-
-			country: Joi.string().optional(),
-			district: Joi.string().optional(),
-			region: Joi.string().optional(),
-			zone: Joi.string().optional(),
-			street: Joi.string().optional().min(3).max(255),
-
-			latitude: Joi.number().optional(),
-			longitude: Joi.number().optional(),
-			isAddressVisible: Joi.boolean().optional(),
-
-			contactPhone: Joi.string().optional(),
-			contactEmail: Joi.string().email().optional(),
-			contactName: Joi.string().optional(),
-			contactAddress: Joi.string().optional(),
-			socialContacts: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).optional(),
-			isContactVisible: Joi.boolean().optional(),
-		});
-
-		return schema.validate(reqBody);
-	}
-
-	static modifyPostByAdmin(reqBody) {
-		const schema = Joi.object({
-			modernizationStatus: Joi.string().required().allow('pending', 'approved', 'rejected'),
-			modernizationComment: Joi.string().optional(),
-			modernizationBy: Joi.string().required(),
-			isUrgently: Joi.boolean().optional(),
-			expiredUrgentlyAt: Joi.date().optional(),
-			isPremium: Joi.boolean().optional(),
-			expiredPremiumAt: Joi.date().optional(),
-			isVip: Joi.boolean().optional(),
-			expiredVipAt: Joi.date().optional(),
-			isTop: Joi.boolean().optional(),
-			expiredTopAt: Joi.date().optional(),
-			telegramMessage: Joi.alternatives(
-				Joi.string(),
-				Joi.object(),
-				Joi.array().items(Joi.string())
-			).optional(),
-			status: Joi.boolean().optional(),
-			isPopular: Joi.boolean().optional(),
-			isAddressVisible: Joi.boolean().optional(),
-			isContactVisible: Joi.boolean().optional(),
-		});
-
-		return schema.validate(reqBody);
+function removeImages(req) {
+	if (req.files && req.files.length > 0) {
+		for (const file of req.files) {
+			removeUploadedFile(file.path);
+		}
 	}
 }
 

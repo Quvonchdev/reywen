@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const UserMessageController = require('../controllers/user-message-controller');
 const AuctionChatController = require('../controllers/auction-controller/auction-chat-controller');
-const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
+const objIdValidate = require('../middlewares/objectId-validation-middleware');
 
 const rateLimit = require('../configurations/rate-limiter');
 const authRole = require('../middlewares/auth-role-middleware');
@@ -12,30 +12,30 @@ const commonMiddleware = [rateLimit(60, 1), authRole];
 router.post('/send', [...commonMiddleware], UserMessageController.sendMessages);
 router.get(
 	'/:userId',
-	[...commonMiddleware, objectIdValidationMiddleware('userId')],
+	[...commonMiddleware, objIdValidate('userId')],
 	UserMessageController.getMessages
 );
 router.patch(
 	'/read/:messageId',
-	[...commonMiddleware, objectIdValidationMiddleware('messageId')],
+	[...commonMiddleware, objIdValidate('messageId')],
 	UserMessageController.readMessage
 );
 router.delete(
 	'/:messageId',
-	[...commonMiddleware, objectIdValidationMiddleware('messageId')],
+	[...commonMiddleware, objIdValidate('messageId')],
 	UserMessageController.deleteMessage
 );
 router.delete(
 	'/all/:userId',
-	[...commonMiddleware, objectIdValidationMiddleware('userId')],
+	[...commonMiddleware, objIdValidate('userId')],
 	UserMessageController.deleteMessages
 );
 router.put(
 	'/:messageId/:userId',
 	[
 		...commonMiddleware,
-		objectIdValidationMiddleware('messageId'),
-		objectIdValidationMiddleware('userId'),
+		objIdValidate('messageId'),
+		objIdValidate('userId'),
 	],
 	UserMessageController.editMessage
 );
@@ -43,13 +43,13 @@ router.put(
 // auction-chat
 router.get(
 	'/auction/all/:auctionId',
-	[...commonMiddleware, objectIdValidationMiddleware('auctionId')],
+	[...commonMiddleware, objIdValidate('auctionId')],
 	AuctionChatController.getAll
 );
 
 router.get(
 	'/auction/:userId',
-	[...commonMiddleware, objectIdValidationMiddleware('userId')],
+	[...commonMiddleware, objIdValidate('userId')],
 	AuctionChatController.getMessagesByUser
 );
 
@@ -57,15 +57,15 @@ router.get(
 	'/auction/:auctionId/:userId',
 	[
 		...commonMiddleware,
-		objectIdValidationMiddleware('auctionId'),
-		objectIdValidationMiddleware('userId'),
+		objIdValidate('auctionId'),
+		objIdValidate('userId'),
 	],
 	AuctionChatController.getMessagesByAuctionAndUser
 );
 
 router.delete(
 	'/auction/:messageId/:userId',
-	[...commonMiddleware, objectIdValidationMiddleware('messageId')],
+	[...commonMiddleware, objIdValidate('messageId')],
 	AuctionChatController.deleteMessageByUser
 );
 

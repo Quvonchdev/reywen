@@ -5,7 +5,6 @@ const ReturnResult = require('../../helpers/return-result');
 const SmsEskiz = require('../../utils/sms');
 const { smsTemplate } = require('../../configurations/sms-template');
 const envSecretsConfig = require('../../configurations/env-secrets-config');
-const { VerifyAuction } = require('../../models/auction-models/verify-auction-model');
 const { Post } = require('../../models/post-models/post-model');
 const randomstring = require('randomstring');
 const { Participant } = require('../../models/auction-models/participants-model');
@@ -151,66 +150,6 @@ class AuctionController {
 		};
 
 		return res.status(200).json(ReturnResult.success(auction, resultMessage));
-	};
-
-	static VerifyAuction = async (req, res) => {
-		const { auctionId, userId } = req.params;
-		const { verifyCode } = req.body;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound));
-		}
-
-		const verifyAuction = await VerifyAuction.findOne({
-			auction: auctionId,
-			user: userId,
-			verifyCode: verifyCode,
-		});
-
-		if (!verifyAuction) {
-			return res
-				.status(404)
-				.json(ReturnResult.errorMessage("Verification code isn't valid. Please try again!"));
-		}
-
-		auction.isVerified = true;
-		await auction.save();
-		await VerifyAuction.deleteMany({ auction: auctionId, user: userId });
-
-		return res.status(200).json(ReturnResult.success(auction, 'Auction verified successfully'));
-	};
-
-	static resendVerifyCode = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound));
-		}
-
-		// delete all verify codes
-		await VerifyAuction.deleteMany({ auction: auctionId, user: userId });
-
-		const verifyCode = createVerifyCode();
-		await createAndSaveRandomVerifyAuction(userId, auctionId, verifyCode);
-		const smsResult = await sendSms(verifyCode, user);
-
-		return res.status(200).json(ReturnResult.success(auction, smsResult.data.message));
 	};
 
 	static updateAuction = async (req, res) => {
@@ -637,55 +576,6 @@ class AuctionController {
 		await participant.save();
 
 		return res.status(200).json(ReturnResult.success(auction, 'Successfully participated'));
-	};
-
-	static verifyParticipation = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		if (auction.status === 'active' || auction.status === 'completed') {
-			return res.status(400).json(ReturnResult.errorMessage('Please wait for next auction'));
-		}
-
-		// const isAuctionStart = isAuctionStarted(auction.startDate);
-
-		// if (isAuctionStart) {
-		// 	return res.status(400).json(ReturnResult.errorMessage(isAuctionStart));
-		// }
-
-		// const isVerified = checkIfAuctionIsVerified(auction.isVerified);
-
-		// if (isVerified) {
-		// 	return res.status(400).json(ReturnResult.errorMessage(isVerified));
-		// }
-
-		const participant = await Participant.findOne({
-			auction: auctionId,
-			user: userId,
-			isParticipating: true,
-		});
-
-		if (!participant) {
-			return res
-				.status(404)
-				.json(ReturnResult.errorMessage('You are not participating in this auction'));
-		}
-
-		participant.isVerified = true;
-		await participant.save();
-
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully verified'));
 	};
 
 	static getParticipants = async (req, res) => {

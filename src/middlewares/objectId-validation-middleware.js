@@ -1,7 +1,7 @@
 const { isValidObjectId } = require('mongoose');
 const ReturnResult = require('../helpers/return-result');
 
-function objectIdValidatorMiddleware(paramName) {
+function objIdValidate(paramName) {
 	return function (req, res, next) {
 		const paramValue = req.params[paramName];
 		if (isValidObjectId(paramValue)) {
@@ -18,4 +18,4 @@ function objectIdValidatorMiddleware(paramName) {
 	};
 }
 
-module.exports = objectIdValidatorMiddleware;
+module.exports = objIdValidate;

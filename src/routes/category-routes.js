@@ -5,7 +5,7 @@ const rateLimit = require('../configurations/rate-limiter');
 const upload = require('../utils/multer');
 const authRole = require('../middlewares/auth-role-middleware');
 const checkRoles = require('../middlewares/roles-middleware');
-const objectIdValidationMiddleware = require('../middlewares/objectId-validation-middleware');
+const objIdValidate = require('../middlewares/objectId-validation-middleware');
 
 // authRole, checkRoles(['Admin', 'SuperAdmin']),
 const commonMiddleware = [rateLimit(30, 2)];
@@ -15,7 +15,7 @@ router.get('/', rateLimit(30, 2), Category.getCategoriesByPagination);
 router.get('/all', rateLimit(30, 2), Category.getCategories);
 router.get(
 	'/single/:categoryId',
-	[rateLimit(30, 2), objectIdValidationMiddleware('categoryId')],
+	[rateLimit(30, 2), objIdValidate('categoryId')],
 	Category.getCategory
 );
 
@@ -30,7 +30,7 @@ router.delete(
 		...commonMiddleware,
 		authRole,
 		checkRoles(['Admin', 'SuperAdmin']),
-		objectIdValidationMiddleware('categoryId'),
+		objIdValidate('categoryId'),
 	],
 	Category.deleteCategory
 );
@@ -45,7 +45,7 @@ router.delete(
 		...commonMiddleware,
 		authRole,
 		checkRoles(['Admin', 'SuperAdmin']),
-		objectIdValidationMiddleware('categoryId'),
+		objIdValidate('categoryId'),
 	],
 	Category.deleteCategoryCoverImage
 );
@@ -55,7 +55,7 @@ router.put(
 		...commonMiddleware,
 		authRole,
 		checkRoles(['Admin', 'SuperAdmin']),
-		objectIdValidationMiddleware('categoryId'),
+		objIdValidate('categoryId'),
 		upload.single('file'),
 	],
 	Category.updateCategory
@@ -67,7 +67,7 @@ router.put(
 		...commonMiddleware,
 		authRole,
 		checkRoles(['Admin', 'SuperAdmin']),
-		objectIdValidationMiddleware('categoryId'),
+		objIdValidate('categoryId'),
 		upload.single('file'),
 	],
 	Category.updateCategoryCoverImage

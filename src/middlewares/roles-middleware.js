@@ -28,10 +28,6 @@ const checkRoles = (roles) => async (req, res, next) => {
 		return res.status(401).json(ReturnResult.errorMessage(ERROR_MESSAGES.INVALID_TOKEN));
 	}
 
-	if (user.isBlockedUser == true) {
-		return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.ACCOUNT_BLOCKED));
-	}
-
 	const hasRole = user.userRoles.some((role) => roles.includes(role));
 
 	if (!hasRole) {
