@@ -22,16 +22,9 @@ class Telegram {
 		return ReturnResult.successMessage('Picture sent successfully to Telegram Channel');
 	}
 
-	static async sendPictures(pictures, data, url) {
-		await bot.telegram.sendMediaGroup(
-			TG_CHANNEL,
-			pictures.map((image, index) => {
-				return {
-					type: 'photo',
-					media: image,
-					caption: index === 0 ? `
-					🏠 ${data?.title || '–'} \n \n
-					📍 Адрес: город ${data?.region || '–'}, ${data?.district || '–'}, ${data?.street || '–'} \n
+	/**
+	 * 		🏠 ${data?.title || '–'} \n \n
+					📍 Адрес: город ${data?.address.region || '–'}, ${data?.district || '–'}, ${data?.street || '–'} \n
 					🛏️ Комнат: ${data?.fullInfo?.room || '–'} \n
 					📏 Площадь: ${data?.fullInfo?.area || '–'} \n
 					🏢 Этаж: ${data?.fullInfo?.floor || '–'} \n
@@ -43,7 +36,19 @@ class Telegram {
 
 					👉 Подробнее на сайте \n
 
-					🔍 Больше объявлений на ${url || '–'}
+					🔍 Больше объявлений на ${url || '–'
+	 * */ 
+
+	static async sendPictures(pictures, data, url) {
+		await bot.telegram.sendMediaGroup(
+			TG_CHANNEL,
+			pictures.map((image, index) => {
+				return {
+					type: 'photo',
+					media: image,
+					caption: index === 0 ? `
+					HELLO
+			}
 					` : null,
 					parse_mode: 'Markdown',
 				};

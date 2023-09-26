@@ -9,6 +9,9 @@ const { Post } = require('../../models/post-models/post-model');
 const randomstring = require('randomstring');
 const { Participant } = require('../../models/auction-models/participants-model');
 const { UserAuctionMessage } = require('../../models/user-models/user-auction-message-model');
+const { TransactionAuctionParticipant } = require('../../models/transaction-models/auction-participant-transaction-model');
+const { TransactionAuction } = require('../../models/transaction-models/auction-transaction-model');
+const { AuctionPetition } = require('../../models/auction-models/auction-petition-model');
 
 const MESSAGES = {
 	getAuctions: (name) => `${name} get successfully`,
@@ -49,7 +52,7 @@ class AuctionController {
 		const { page, limit, filter, sort } = req.query;
 
 		const PAGE = parseInt(page, 10) || 1;
-		const LIMIT = parseInt(limit, 10) || 10;
+		const LIMIT = parseInt(limit, 10) || 15;
 
 		let query = {};
 		let sortOptions = {};
@@ -136,21 +139,53 @@ class AuctionController {
 			createdBy,
 		});
 
-		// before sending sms, save auction to database
 		await auction.save();
 
-		// send sms to user to verify auction
-		const verifyCode = createVerifyCode();
-		await createAndSaveRandomVerifyAuction(createdBy, auction._id, verifyCode);
-		const smsResult = await sendSms(verifyCode, user);
-
-		const resultMessage = {
-			data: MESSAGES.createAuction('Auction'),
-			smsResult: smsResult.data.message,
-		};
-
-		return res.status(200).json(ReturnResult.success(auction, resultMessage));
+		return res.status(200).json(ReturnResult.success(auction, "Please pay your auction fee"));
 	};
+
+	static paymentAuction = async (req, res) => {
+		const { auctionId, userId } = req.params;
+
+		const user = await findUserById(userId);
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
+		}
+
+		const auction = await findAuctionById(auctionId);
+
+		if (!auction) {
+			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
+		}
+
+		if (auction.createdBy != userId) {
+			return res.status(401).json(ReturnResult.errorMessage('Unauthorized'));
+		}
+
+		if (auction.paymentStatus == 'paid') {
+			return res.status(400).json(ReturnResult.errorMessage('You have already paid your auction fee'));
+		}
+
+		if(req.body.price > user.balance) {
+			return res.status(400).json(ReturnResult.errorMessage('You have not enough balance! Please recharge your account'));
+		}
+
+		user.balance = user.balance - req.body.price;
+		await user.save();
+
+		auction.paymentStatus = 'paid';
+
+		await auction.save();
+
+		await new TransactionAuction({
+			user: userId,
+			amount: req.body.price,
+			auctionId: auctionId,
+		}).save();
+
+		return res.status(200).json(ReturnResult.success(auction, 'Successfully paid'));
+	}
 
 	static updateAuction = async (req, res) => {
 		const { auctionId, userId } = req.params;
@@ -403,7 +438,7 @@ class AuctionController {
 			auction: auctionId,
 			user: userId,
 			isParticipating: true,
-			isVerified: true,
+			paymentStatus: 'paid',
 		});
 
 		if (!user) {
@@ -411,7 +446,7 @@ class AuctionController {
 				.status(404)
 				.json(
 					ReturnResult.errorMessage(
-						"You can't participate in this auction! Please verify auction first!"
+						"You can't participate in this auction! Please register first!"
 					)
 				);
 		}
@@ -543,23 +578,14 @@ class AuctionController {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
 		}
 
-		// const isAuctionStart = isAuctionStarted(auction.startDate);
-
-		// if (!isAuctionStart) {
-		// 	return res.status(400).json(ReturnResult.errorMessage(isAuctionStart));
-		// }
-
-		const verify = auction.isVerified;
-		const isVerified = checkIfAuctionIsVerified(verify);
-		if (!isVerified) {
-			return res.status(400).json(ReturnResult.errorMessage('Hello'));
-		}
-
 		const isParticipating = await Participant.findOne({
 			auction: auctionId,
 			user: userId,
-			isParticipating: true,
 		});
+
+		if(isParticipating.paymentStatus == 'pending') {
+			return res.status(400).json(ReturnResult.errorMessage('Please pay your participation fee'));
+		}
 
 		if (isParticipating) {
 			return res
@@ -570,16 +596,21 @@ class AuctionController {
 		const participant = new Participant({
 			auction: auctionId,
 			user: userId,
-			isParticipating: true,
 		});
 
 		await participant.save();
 
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully participated'));
+		return res.status(200).json(ReturnResult.success(auction, 'Successfully participated! Please pay your participation fee'));
 	};
 
-	static getParticipants = async (req, res) => {
-		const { auctionId } = req.params;
+	static paymentForParticipating = async (req, res) => {
+		const { auctionId, userId } = req.params;
+
+		const user = await findUserById(userId);
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
+		}
 
 		const auction = await findAuctionById(auctionId);
 
@@ -587,19 +618,47 @@ class AuctionController {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
 		}
 
-		const participants = await Participant.find({ auction: auctionId }).populate(
-			'user',
-			'fullName _id phoneNumber coverImage'
-		);
+		const participant = await Participant.findOne({
+			auction: auctionId,
+			user: userId,
+		});
 
-		return res.status(200).json(ReturnResult.success(participants, 'Successfully verified'));
-	};
+		if (!participant) {
+			return res
+				.status(400)
+				.json(ReturnResult.errorMessage('You are not participating in this auction. Please register first'));
+		}
+
+		if (participant.paymentStatus == 'paid') {
+			return res.status(400).json(ReturnResult.errorMessage('You have already paid your participation fee'));
+		}
+
+		if(req.body.price > user.balance) {
+			return res.status(400).json(ReturnResult.errorMessage('You have not enough balance! Please recharge your account'));
+		}
+
+		user.balance = user.balance - req.body.price;
+		await user.save();
+
+		participant.paymentStatus = 'paid';
+
+		await participant.save();
+
+		await new TransactionAuctionParticipant({
+			user: userId,
+			amount: req.body.price,
+			auctionId: auctionId,
+			participantId: participant._id,
+		}).save();
+
+		return res.status(200).json(ReturnResult.success(auction, 'Successfully paid'));
+	}
 
 	static getParticipantsByPagination = async (req, res) => {
 		const { auctionId, page, limit } = req.params;
 
 		const PAGE = parseInt(page, 10) || 1;
-		const LIMIT = parseInt(limit, 10) || 10;
+		const LIMIT = parseInt(limit, 10) || 15;
 
 		const auction = await findAuctionById(auctionId);
 
@@ -619,163 +678,9 @@ class AuctionController {
 			.json(
 				ReturnResult.success(
 					ReturnResult.paginate(participants, totalItems, PAGE, LIMIT),
-					'Successfully verified'
+					'Successfully get participants'
 				)
 			);
-	};
-
-	static getParticipantsByUserId = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		const participants = await Participant.find({ auction: auctionId, user: userId }).populate(
-			'user',
-			'fullName _id phoneNumber coverImage'
-		);
-
-		return res.status(200).json(ReturnResult.success(participants, 'Successfully verified'));
-	};
-
-	static removeParticipantByAdmin = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		const participant = await Participant.findOne({
-			auction: auctionId,
-			user: userId,
-			isParticipating: true,
-		});
-
-		if (!participant) {
-			return res
-				.status(404)
-				.json(ReturnResult.errorMessage('User is not participating in this auction'));
-		}
-
-		participant.isParticipating = false;
-		await participant.save();
-
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully removed'));
-	};
-
-	static leaveAuction = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		const isAuctionStart = isAuctionStarted(auction.startDate);
-
-		if (isAuctionStart) {
-			return res.status(400).json(ReturnResult.errorMessage(isAuctionStart));
-		}
-
-		const isVerified = checkIfAuctionIsVerified(auction.isVerified);
-
-		if (isVerified) {
-			return res.status(400).json(ReturnResult.errorMessage(isVerified));
-		}
-
-		const participant = await Participant.findOne({
-			auction: auctionId,
-			user: userId,
-			isParticipating: true,
-		});
-
-		if (!participant) {
-			return res
-				.status(404)
-				.json(ReturnResult.errorMessage('You are not participating in this auction'));
-		}
-
-		participant.isParticipating = false;
-		await participant.save();
-
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully removed'));
-	};
-
-	static participantsCount = async (req, res) => {
-		const { auctionId } = req.params;
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		const participants = await Participant.countDocuments({ auction: auctionId });
-
-		return res.status(200).json(ReturnResult.success(participants, 'Successfully verified'));
-	};
-
-	static participateInAuctionAgain = async (req, res) => {
-		const { auctionId, userId } = req.params;
-
-		const user = await findUserById(userId);
-
-		if (!user) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
-		}
-
-		const auction = await findAuctionById(auctionId);
-
-		if (!auction) {
-			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
-		}
-
-		const isAuctionStart = isAuctionStarted(auction.startDate);
-
-		if (isAuctionStart) {
-			return res.status(400).json(ReturnResult.errorMessage(isAuctionStart));
-		}
-
-		const isVerified = checkIfAuctionIsVerified(auction.isVerified);
-
-		if (isVerified) {
-			return res.status(400).json(ReturnResult.errorMessage(isVerified));
-		}
-
-		const isParticipating = await Participant.findOne({
-			auction: auctionId,
-			user: userId,
-		});
-
-		if (isParticipating.isParticipating === true) {
-			return res
-				.status(400)
-				.json(ReturnResult.errorMessage('You are already participating in this auction'));
-		}
-
-		isParticipating.isParticipating = true;
-
-		await isParticipating.save();
-
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully participated'));
 	};
 
 	static deleteAuction = async (req, res) => {
@@ -814,8 +719,16 @@ class AuctionController {
 		return res.status(200).json(ReturnResult.success(auction, MESSAGES.delete('Auction')));
 	};
 
-	static deleteAuctionByAdmin = async (req, res) => {
-		const { auctionId } = req.params;
+	static sendPetitionToReceivePayment = async (req, res) => {
+		const { auctionId, userId } = req.params;
+
+		const { creditCardNumber, fullName, message } = req.body;
+
+		const user = await findUserById(userId);
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
+		}
 
 		const auction = await findAuctionById(auctionId);
 
@@ -823,22 +736,44 @@ class AuctionController {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
 		}
 
-		const isAuctionStart = isAuctionStarted(auction.startDate);
-
-		if (isAuctionStart) {
-			return res.status(400).json(ReturnResult.errorMessage(isAuctionStart));
+		if(auction.status !== 'completed') {
+			return res.status(400).json(ReturnResult.errorMessage('Auction is not completed yet!'));
 		}
 
-		const isVerified = checkIfAuctionIsVerified(auction.isVerified);
+		const participant = await Participant.findOne({
+			auction: auctionId,
+			user: userId,
+			isParticipating: true,
+			paymentStatus: 'paid',
+		})
 
-		if (!isVerified) {
-			return res.status(400).json(ReturnResult.errorMessage(isVerified));
+		if(!participant) {
+			return res.status(400).json(ReturnResult.errorMessage('You are not member of this auction'));
 		}
 
-		await Auction.findByIdAndDelete(auctionId);
+		const transaction = await TransactionAuctionParticipant.findOne({
+			user: userId,
+			auctionId: auctionId,
+			participantId: participant._id,
+		})
 
-		return res.status(200).json(ReturnResult.success(auction, MESSAGES.delete('Auction')));
-	};
+		if(!transaction) {
+			return res.status(400).json(ReturnResult.errorMessage('You did not pay your participation fee! Please contact with admin'));
+		}
+
+		const petition = new AuctionPetition({
+			creditCardNumber: creditCardNumber,
+			fullName: fullName,
+			message: message,
+			user: userId,
+			auction: auctionId,
+			transaction: transaction._id,
+		})
+
+		await petition.save();
+
+		return res.status(200).json(ReturnResult.success(petition, 'Successfully sent petition! Please wait for admin response'));
+	}
 }
 
 class Validation {

@@ -28,7 +28,7 @@ const scheduleInactiveAuctions = async () => {
 			const participants = await Participant.find({
 				auction: auction._id,
 				isParticipating: true,
-				isVerified: true,
+				paymentStatus: 'paid'
 			});
 
 			if (currentDate > auctionEndDate) {
@@ -64,7 +64,7 @@ const getAllAuctionsStatusInactivePage = async (page = 1, limit = LIMIT) => {
 			{ $or: [{ status: auctionStatus.active }, { status: auctionStatus.inactive }] },
 			{ status: { $ne: auctionStatus.completed } },
 		],
-		isVerified: true,
+		paymentStatus: 'paid',
 	})
 		.limit(limit)
 		.skip((page - 1) * limit);
@@ -76,7 +76,7 @@ const calculateTotalPagesOfInactiveAuctions = async (limit) => {
 			{ $or: [{ status: auctionStatus.active }, { status: auctionStatus.inactive }] },
 			{ status: { $ne: auctionStatus.completed } },
 		],
-		isVerified: true,
+		paymentStatus: 'paid',
 	});
 	const totalPages = Math.ceil(auctions.length / limit);
 	return totalPages;

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../user-models/user-model').User;
 const transactionDatabase = require('../../connections/database-connections/transaction-db-connection');
 
-const transactionAuctionSchema = new mongoose.Schema(
+const transactionSchema = new mongoose.Schema(
 	{
 		user: {
 			type: mongoose.Schema.Types.ObjectId,
@@ -15,9 +15,13 @@ const transactionAuctionSchema = new mongoose.Schema(
 			required: true,
 		},
 		auctionId: {
-			type: String,
+			type: mongoose.Schema.Types.ObjectId,
 			required: true,
 		},
+        participantId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+        }
 	},
 	{
 		collection: 'transactionAuction',
@@ -25,5 +29,5 @@ const transactionAuctionSchema = new mongoose.Schema(
 	}
 );
 
-const TransactionAuction = transactionDatabase.model('TransactionAuction', transactionAuctionSchema);
-exports.TransactionAuction = TransactionAuction;
+const TransactionAuctionParticipant = transactionDatabase.model('TransactionAuctionParticipant', transactionSchema);
+exports.TransactionAuctionParticipant = TransactionAuctionParticipant;
