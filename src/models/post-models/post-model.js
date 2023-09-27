@@ -12,25 +12,21 @@ const addressSchema = new mongoose.Schema({
 	country: {
 		type: mongoose.Schema.Types.Mixed,
 		ref: Country,
-		autopopulate: true,
 		default: null,
 	},
 	region: {
 		type: mongoose.Schema.Types.Mixed,
 		ref: Region,
-		autopopulate: true,
 		default: null,
 	},
 	district: {
 		type: mongoose.Schema.Types.Mixed,
 		ref: District,
-		autopopulate: true,
 		default: null,
 	},
 	zone: {
 		type: mongoose.Schema.Types.Mixed,
 		ref: Zone,
-		autopopulate: true,
 		default: null,
 	},
 	street: {

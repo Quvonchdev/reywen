@@ -385,7 +385,7 @@ class PostController {
 
 		return res
 			.status(200)
-			.json(ReturnResult.success(modernizationPost, SUCCESS_MESSAGES.MODIFY_POST_SUCCESS));
+			.json(ReturnResult.success(post, SUCCESS_MESSAGES.MODIFY_POST_SUCCESS));
 	};
 
 	static premiumPost = async (req, res) => {
