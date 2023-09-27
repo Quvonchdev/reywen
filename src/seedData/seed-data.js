@@ -42,11 +42,10 @@ async function seedRegions() {
 				await Region.deleteMany({});
 			}
 
-			// add countryId to regions number = 1
 			let Countries = await Country.find({});
+
 			regions.forEach((region) => {
-				// add countryObjId to regions
-				region.countryObjId = Countries[0]._id;
+				region.country = Countries[0]._id;
 			});
 
 			await Region.insertMany(regions);
@@ -68,14 +67,19 @@ async function seedDistricts() {
 			}
 
 			let Regions = await Region.find({});
+
 			districts.forEach((district) => {
 				Regions.forEach((region) => {
 					if (region.id === district.region_id) {
-						district.regionObjId = region._id;
+						district.region = region._id;
 					}
 				});
-			});
+			})
 
+			districts.forEach((district) => {
+				delete district.region_id;
+			});
+			
 			await District.insertMany(districts);
 			console.log('🌱 Seed data successfully: District');
 			process.exit(0);
@@ -98,10 +102,15 @@ async function seedZones() {
 			zones.forEach((zone) => {
 				districts.forEach((district) => {
 					if (district.id === zone.district_id) {
-						zone.districtObjId = district._id;
+						zone.district = district._id;
 					}
 				});
 			});
+
+			zones.forEach((zone) => {
+				delete zone.district_id;
+			});
+
 
 			await Zone.insertMany(zones);
 			console.log('🌱 Seed data successfully: MFY');

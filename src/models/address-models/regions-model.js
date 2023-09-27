@@ -8,27 +8,16 @@ const regionSchema = new mongoose.Schema({
 		unique: true,
 		index: true,
 	},
-	id: {
-		type: Number,
-		default: null,
-	},
-	countryObjId: {
+	country: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Country',
 		default: null,
 	},
-	status: {
-		type: Boolean,
-		default: true,
-	},
-	shortDescription: {
-		type: String,
-		default: null,
-	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
+	id: {
+		type: Number,
+	}
+}, {
+	timestamps: true
 });
 
 const Region = primaryDatabase.model('Region', regionSchema);

@@ -90,7 +90,7 @@ class UserController {
 
 		await user.save();
 		await createUserFavorite(user._id)
-		await generateCodeAndSaveIt(user._id)
+		await generateCodeAndSaveIt(user._id, user.phoneNumber)
 
 		return res.status(200).json(ReturnResult.success({
 			_id: user._id,
@@ -158,13 +158,13 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_ALREADY_VERIFIED));
 		}
 
-		await generateCodeAndSaveIt(user._id);
+		await generateCodeAndSaveIt(user._id, user.phoneNumber);
 
 		return res
 			.status(200)
 			.json(
 				ReturnResult.successMessage(
-					`${SUCCESS_MESSAGES.VERIFICATION_CODE_SENT}. ${smsResult.message}`
+					SUCCESS_MESSAGES.VERIFICATION_CODE_SENT
 				)
 			);
 	};
@@ -244,7 +244,7 @@ class UserController {
 		}
 
 		await deleteVerifyCodes(user._id);
-		await generateCodeAndSaveIt(user._id);
+		await generateCodeAndSaveIt(user._id, user.phoneNumber);
 
 		return res
 			.status(200)
@@ -370,9 +370,8 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		const token = req.headers?.authorization?.split(' ')[1];
-
-		if(!token) {
+		const accessToken = req.headers?.authorization?.split(' ')[1];
+		if(!accessToken) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
@@ -382,7 +381,7 @@ class UserController {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
-		if(user._id !== decodedToken._id) {
+		if(user._id.toString() !== decodedToken._id) {
 			return res.status(400).send(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
 		}
 
@@ -397,7 +396,6 @@ class UserController {
 
 		result.userFavorites = userFavorites;
 		
-
 		return res.status(200).json(ReturnResult.success(result, 'user fetched successfully'));
 	};
 
@@ -785,21 +783,22 @@ function generateJwtToken(user) {
 	);
 }
 
-async function generateCodeAndSaveIt(userId) {
+async function generateCodeAndSaveIt(userId, phoneNumber) {
 	const verify_code = createVerifyCode();
 	if (verify_code) {
 		await createAndSaveRandomVerifyCode(userId, verify_code);
 	}
-	await sendSms(verify_code)
+	await sendSms(verify_code, phoneNumber)
 }
 
-async function sendSms(verify_code) {
+async function sendSms(verify_code, phoneNumber) {
 	await SmsEskiz.sendMessage(
 		smsTemplate(verify_code),
 		phoneNumber,
 		4546,
-		`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${verify_code}}`
+		`${envSecretsConfig.CLIENT_REDIRECT_URL}/verify-account/${verify_code}`
 	).then((result) => {
+		console.log(result.message);
 		return result;
 	});
 }

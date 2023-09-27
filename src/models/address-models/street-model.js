@@ -7,19 +7,9 @@ const streetSchema = new mongoose.Schema({
 		required: true,
 		unique: true,
 		index: true,
-	},
-	shortDescription: {
-		type: String,
-		default: null,
-	},
-	status: {
-		type: Boolean,
-		default: true,
-	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
+	}
+}, {
+	timestamps: true
 });
 
 const Street = primaryDatabase.model('Street', streetSchema);

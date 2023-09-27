@@ -539,7 +539,7 @@ class AuctionController {
 
 		if (isEndDateUpdated == false) {
 			const endDate = new Date(auction.endDate);
-			const bidDate = new Date(auction.bidingUsers[auction.bidingUsers.length - 1].bitDate);
+			const bidDate = new Date(auction.bidingUsers[auction.bidingUsers.length - 1].bidDate);
 			const difference = (endDate - bidDate) / 1000 / 60;
 			if (difference < 5) {
 				const newEndDate = new Date(endDate.getTime() + 15 * 60000);

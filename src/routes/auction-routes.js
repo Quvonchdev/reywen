@@ -70,32 +70,7 @@ router.post(
 	[rateLimit(10, 1), authRole],
 	AuctionController.participateInAuction
 );
-router.put(
-	'/:auctionId/:userId/leave',
-	[rateLimit(10, 1), authRole],
-	AuctionController.leaveAuction
-);
-router.put(
-	'/:auctionId/:userId/leave-private',
-	[rateLimit(10, 1), authRole, checkRoles(['Admin', 'SuperAdmin'])],
-	AuctionController.removeParticipantByAdmin
-);
-router.put(
-	'/:auctionId/:userId/re-participate',
-	[rateLimit(10, 1), authRole],
-	AuctionController.participateInAuctionAgain
-);
-router.get(
-	'/:auctionId/count-participate',
-	[rateLimit(10, 1), authRole],
-	AuctionController.participantsCount
-);
-
 router.delete('/:auctionId/:userId', [rateLimit(10, 1), authRole], AuctionController.deleteAuction);
-router.delete(
-	'/:auctionId/:userId/private',
-	[rateLimit(10, 1), authRole, checkRoles(['Admin', 'SuperAdmin'])],
-	AuctionController.deleteAuctionByAdmin
-);
+
 
 module.exports = router;

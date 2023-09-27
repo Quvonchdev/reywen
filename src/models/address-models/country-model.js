@@ -8,34 +8,8 @@ const countrySchema = new mongoose.Schema({
 		unique: true,
 		index: true,
 	},
-	Code: {
-		type: String,
-		default: null,
-	},
-	phoneCode: {
-		type: String,
-		default: null,
-	},
-	currencyCode: {
-		type: String,
-		default: null,
-	},
-	currencyName: {
-		type: String,
-		default: null,
-	},
-	status: {
-		type: Boolean,
-		default: true,
-	},
-	shortDescription: {
-		type: mongoose.Schema.Types.Mixed,
-		default: null,
-	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
+}, {
+	timestamps: true
 });
 
 const Country = primaryDatabase.model('Country', countrySchema);

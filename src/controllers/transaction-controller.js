@@ -29,8 +29,8 @@ class TransactionController {
 
 		await orderTransaction.save();
 
-		const returnUrl = envSecrets.CLIENT_REDIRECT_URL + orderTransaction._id;
-		const url = await generate_url(orderTransaction._id, amount, returnUrl);
+		const returnUrl = envSecrets.CLIENT_REDIRECT_URL + orderTransaction.id;
+		const url = await generate_url(orderTransaction.id, amount, returnUrl);
 		return res.status(200).json(ReturnResult.success(url, 'Click URL generated successfully'));
 	};
 
@@ -79,7 +79,7 @@ class TransactionController {
 
 			await new_transaction.save();
 
-			responseData.merchant_prepare_id = new_transaction._id;
+			responseData.merchant_prepare_id = new_transaction.id;
 
 			return res.json(responseData);
 		} else {
@@ -122,7 +122,9 @@ class TransactionController {
 
 		if (isTransactionAvailable == true) {
 			try {
-				const transaction = await transactionModel.findById(data.merchant_prepare_id);
+				const transaction = await transactionModel.findOne({
+					id: data.merchant_prepare_id,
+				});
 
 				if (data.error == TRANSACTION_CONSTANTS.A_LACK_OF_MONEY) {
 					responseData.error = TRANSACTION_CONSTANTS.A_LACK_OF_MONEY_CODE;
@@ -155,10 +157,10 @@ class TransactionController {
 				transaction.status = TRANSACTION_ENUMS.FINISHED;
 				transaction.save();
 
-				responseData.merchant_confirm_id = transaction._id;
+				responseData.merchant_confirm_id = transaction.id;
 
 				const orderTransaction = await userTransactionModel.findOne({
-					_id: transaction.merchant_trans_id,
+					id: transaction.merchant_trans_id,
 				});
 
 				orderTransaction.isPaid = true;
@@ -193,11 +195,7 @@ class TransactionController {
 
 async function checkTransaction(order_id, amount) {
 	if (order_id) {
-		if (isValidObjectId(order_id) == false) {
-			return TRANSACTION_CONSTANTS.ORDER_NOT_FOUND;
-		}
-
-		const transaction = await userTransactionModel.findOne({ _id: order_id });
+		const transaction = await userTransactionModel.findOne({ id: order_id });
 
 		if (!transaction) {
 			return TRANSACTION_CONSTANTS.ORDER_NOT_FOUND;

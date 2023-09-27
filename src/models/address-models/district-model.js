@@ -8,27 +8,15 @@ const districtSchema = new mongoose.Schema({
 		unique: true,
 		index: true,
 	},
-	id: {
-		type: Number,
-		default: null,
-	},
-	region_id: {
-		type: Number,
-		default: null,
-	},
-	regionObjId: {
+	region: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Region',
-		required: true,
 	},
-	status: {
-		type: Boolean,
-		default: true,
+	id: {
+		type: Number,
 	},
-	createdAt: {
-		type: Date,
-		default: Date.now,
-	},
+}, {
+	timestamps: true
 });
 
 const District = primaryDatabase.model('District', districtSchema);

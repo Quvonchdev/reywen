@@ -29,7 +29,7 @@ const userTransactionSchema = new mongoose.Schema(
 userTransactionSchema.pre('save', function (next) {
     if (this.isNew) {
         userTransactionModel.count().then(res => {
-            this.id = res;
+            this.id = res + 1;
             next();
         });
     } else {

@@ -10,7 +10,7 @@ const transaction_routes = require('../../routes/transaction-routes');
 const BASE_URL = '/api/v1';
 
 module.exports = (app) => {
-	app.use(`${BASE_URL}/auth`, auth_routes);
+	app.use(`${BASE_URL}/user`, auth_routes);
 	app.use(`${BASE_URL}/category`, category_routes);
 	app.use(`${BASE_URL}/address`, address_routes);
 	app.use(`${BASE_URL}/posts`, posts_routes);
