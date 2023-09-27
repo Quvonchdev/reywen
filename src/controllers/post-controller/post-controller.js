@@ -6,7 +6,7 @@ const ReturnResult = require('../../helpers/return-result');
 const removeUploadedFile = require('../../helpers/remove-uploaded-file');
 const Telegram = require('../../utils/telegram');
 const path = require('path');
-const TransactionPost = require('../../models/transaction-models/post-transaction-model');
+const { TransactionPost } = require('../../models/transaction-models/post-transaction-model');
 const envSecretsConfig = require('../../configurations/env-secrets-config');
 
 const SUCCESS_MESSAGES = {
