@@ -11,7 +11,7 @@ const regionSchema = new mongoose.Schema({
 	country: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Country',
-		default: null,
+		autopopulate: true,
 	},
 	id: {
 		type: Number,
@@ -20,5 +20,6 @@ const regionSchema = new mongoose.Schema({
 	timestamps: true
 });
 
+regionSchema.plugin(require('mongoose-autopopulate'));
 const Region = primaryDatabase.model('Region', regionSchema);
 exports.Region = Region;

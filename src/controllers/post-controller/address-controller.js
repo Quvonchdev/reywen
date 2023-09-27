@@ -162,7 +162,7 @@ class RegionController {
 				.json(ReturnResult.success(JSON.parse(cachedRegions), MESSAGES.REGIONS_FETCHED, true));
 		}
 
-		const regions = await Region.find().populate('countryObjId');
+		const regions = await Region.find();
 		if (regions.length > 0) {
 			await RedisCache.set('regions', JSON.stringify(regions));
 		}
@@ -185,7 +185,6 @@ class RegionController {
 		}
 
 		const regions = await Region.find()
-			.populate('countryObjId')
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
@@ -207,7 +206,7 @@ class RegionController {
 				.json(ReturnResult.success(JSON.parse(cachedRegion), MESSAGES.REGION_FETCHED, true));
 		}
 
-		const region = await Region.findById(regionId).populate('countryObjId');
+		const region = await Region.findById(regionId)
 		if (!region) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.REGION_NOT_FOUND));
 		}
@@ -312,7 +311,7 @@ class DistrictController {
 				.json(ReturnResult.success(JSON.parse(cachedDistricts), MESSAGES.DISTRICTS_FETCHED, true));
 		}
 
-		const districts = await District.find().populate('regionObjId');
+		const districts = await District.find()
 		if (districts.length > 0) {
 			await RedisCache.set('districts', JSON.stringify(districts));
 		}
@@ -335,7 +334,6 @@ class DistrictController {
 		}
 
 		const districts = await District.find()
-			.populate('regionObjId')
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
@@ -357,7 +355,7 @@ class DistrictController {
 				.json(ReturnResult.success(JSON.parse(cachedDistrict), MESSAGES.DISTRICT_FETCHED, true));
 		}
 
-		const district = await District.findById(districtId).populate('regionObjId');
+		const district = await District.findById(districtId)
 		if (!district) {
 			return ReturnResult.errorMessage(MESSAGES.DISTRICT_NOT_FOUND);
 		}
@@ -377,7 +375,7 @@ class DistrictController {
 				.json(ReturnResult.success(JSON.parse(cachedDistricts), MESSAGES.DISTRICTS_FETCHED, true));
 		}
 
-		const districts = await District.find({ regionObjId: regionId }).populate('regionObjId');
+		const districts = await District.find({ regionObjId: regionId })
 
 		if (districts.length > 0) {
 			await RedisCache.set(`districts-${regionId}`, JSON.stringify(districts));
@@ -473,7 +471,7 @@ class DistrictController {
 
 class ZoneController {
 	static getZones = async (req, res) => {
-		const zones = await Zone.find().populate('districtObjId');
+		const zones = await Zone.find()
 		return res.status(200).json(ReturnResult.success(zones, MESSAGES.ZONES_FETCHED));
 	};
 
@@ -493,7 +491,6 @@ class ZoneController {
 		}
 
 		const zones = await Zone.find()
-			.populate('districtObjId')
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
@@ -515,7 +512,7 @@ class ZoneController {
 				.json(ReturnResult.success(JSON.parse(cachedZone), MESSAGES.ZONE_FETCHED, true));
 		}
 
-		const zone = await Zone.findById(zoneId).populate('districtObjId');
+		const zone = await Zone.findById(zoneId)
 		if (!zone) {
 			return ReturnResult.errorMessage(MESSAGES.ZONE_NOT_FOUND);
 		}
@@ -535,7 +532,7 @@ class ZoneController {
 				.json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
 		}
 
-		const zones = await Zone.find({ districtObjId: districtId }).populate('districtObjId');
+		const zones = await Zone.find({ districtObjId: districtId })
 
 		if (zones.length > 0) {
 			await RedisCache.set(`zones-${districtId}`, JSON.stringify(zones));

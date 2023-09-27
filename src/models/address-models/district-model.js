@@ -11,6 +11,7 @@ const districtSchema = new mongoose.Schema({
 	region: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Region',
+		autopopulate: true,
 	},
 	id: {
 		type: Number,
@@ -19,5 +20,6 @@ const districtSchema = new mongoose.Schema({
 	timestamps: true
 });
 
+districtSchema.plugin(require('mongoose-autopopulate'));
 const District = primaryDatabase.model('District', districtSchema);
 exports.District = District;

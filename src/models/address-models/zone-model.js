@@ -10,7 +10,7 @@ const zoneSchema = new mongoose.Schema({
 	district: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'District',
-		default: null,
+		autopopulate: true,
 	},
 	id: {
 		type: Number,
@@ -19,5 +19,6 @@ const zoneSchema = new mongoose.Schema({
 	timestamps: true
 });
 
+zoneSchema.plugin(require('mongoose-autopopulate'));
 const Zone = primaryDatabase.model('Zone', zoneSchema);
 exports.Zone = Zone;

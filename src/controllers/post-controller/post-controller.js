@@ -621,7 +621,7 @@ class Validation {
 			region: Joi.string().required(),
 			zone: Joi.string().required(),
 			street: Joi.string().required().min(3).max(255),
-			location: Joi.number().required(),
+			location: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).required(),
 
 			contactPhones: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			contactEmails: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
