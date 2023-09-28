@@ -1,39 +1,22 @@
-name: Deploy to Production
+name: Node.js CI
 
 on:
   push:
-    branches:
-      - master # O'zingizning asosiy tizimidan qat'iy ishlatgan tizimga mos keladigan qolgan branch nomi
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  build:
+
+    runs-on: self-hosted
 
     steps:
-    - name: Checkout the code
-      uses: actions/checkout@v2
-      
-    - name: Install Node.js
+    - uses: actions/checkout@v2
+    - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
-        node-version: '18' # O'zingizning loyihangizga mos keladigan Node.js versiyasini tanlang
-
-    - name: Install PM2 globally
-      run: npm install -g pm2
-
-    - name: Install project dependencies
-      run: npm install
-
-    - name: Stop the current process
-      run: pm2 stop index.js
-
-    - name: Start the application with PM2
-      run: pm2 start index.js
-
-    # Bu qismni o'zgartirib ishlatishingiz mumkin. Loyihangizning kerakli qismini kiriting.
-    # - name: Run additional commands if needed
-    #   run: |
-    #     pm2 restart other-app.js
-    #     echo "Additional commands executed."
-
-# Boshqa qismlar mavjud bo'lsa, ularni qo'shishingiz mumkin.
+        node-version: 18.x
+    - run: npm install
+    - run: npm test
+    - run: pm2 restart index.js
