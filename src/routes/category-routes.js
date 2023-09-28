@@ -39,16 +39,6 @@ router.post(
 	[...commonMiddleware, authRole, checkRoles(['Admin', 'SuperAdmin'])],
 	Category.batchDeleteCategories
 );
-router.delete(
-	'/cover-img/:categoryId',
-	[
-		...commonMiddleware,
-		authRole,
-		checkRoles(['Admin', 'SuperAdmin']),
-		objIdValidate('categoryId'),
-	],
-	Category.deleteCategoryCoverImage
-);
 router.put(
 	'/:categoryId',
 	[
@@ -59,18 +49,6 @@ router.put(
 		upload.single('file'),
 	],
 	Category.updateCategory
-);
-
-router.put(
-	'/cover-image/:categoryId',
-	[
-		...commonMiddleware,
-		authRole,
-		checkRoles(['Admin', 'SuperAdmin']),
-		objIdValidate('categoryId'),
-		upload.single('file'),
-	],
-	Category.updateCategoryCoverImage
 );
 
 module.exports = router;

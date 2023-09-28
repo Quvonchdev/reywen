@@ -31,7 +31,12 @@ router.put(
 	[...commonMiddlewares, objIdValidate('userId')],
 	User.updateUser
 );
-router.get('/all', [...commonMiddlewares, authRole, checkRoles(['SuperAdmin'])], User.getAllUsers);
+router.get('/all', 
+	[...commonMiddlewares, 
+	authRole, 
+	checkRoles(['SuperAdmin'])], 
+	User.getAllUsers
+);
 router.get(
 	'/:userId/favorites',
 	[...commonMiddlewares, authRole, objIdValidate('userId')],
@@ -61,8 +66,16 @@ router.patch(
 
 router.patch(
 	'/:userId/update-permission',
-	[...authMiddleware, checkRoles(['SuperAdmin']), objIdValidate('userId')],
+	[...authMiddleware, checkRoles(['SuperAdmin']), 
+	objIdValidate('userId')],
 	User.givePermissionForUser
 );
+
+router.put(
+	'/:userId/block-user',
+	[...authMiddleware, checkRoles(['SuperAdmin']), 
+	objIdValidate('userId')],
+	User.blockUserBySuperAdmin
+)
 
 module.exports = router;

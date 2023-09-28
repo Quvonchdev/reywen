@@ -56,6 +56,17 @@ router.put(
 );
 
 router.put(
+	'/:userId/:postId/remove-images',
+	[
+		...commonMiddleware,
+		authRole,
+		objIdValidate('postId'),
+		objIdValidate('userId')
+	],
+	PostController.deletePostImage
+);
+
+router.put(
 	'/:userId/:postId/premium',
 	[
 		...commonMiddleware,
@@ -75,6 +86,8 @@ router.delete(
 	],
 	PostController.deletePostByUser
 );
+
+// body add message
 router.post(
 	'/:userId/:postId/private',
 	[

@@ -132,5 +132,5 @@ async function seedZones() {
 // seedCountries();
 // seedRegions();
 // seedDistricts();
-// seedZones();
+seedZones();
 

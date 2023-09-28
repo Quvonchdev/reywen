@@ -3,7 +3,6 @@ const { Region } = require('../../models/address-models/regions-model');
 const { District } = require('../../models/address-models/district-model');
 const { Zone } = require('../../models/address-models/zone-model');
 const ReturnResult = require('../../helpers/return-result');
-const RedisCache = require('../../utils/redis');
 const Joi = require('joi');
 
 const MESSAGES = {
@@ -42,38 +41,17 @@ const MESSAGES = {
 
 class CountryController {
 	static getCountries = async (req, res) => {
-		const cachedCountries = await RedisCache.get('countries');
-
-		if (cachedCountries) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedCountries), MESSAGES.COUNTRIES_FETCHED, true));
-		}
-
 		const countries = await Country.find();
-		if (countries.length > 0) {
-			await RedisCache.set('countries', JSON.stringify(countries));
-		}
 		return res.status(200).json(ReturnResult.success(countries, MESSAGES.COUNTRIES_FETCHED));
 	};
 
 	static getCountry = async (req, res) => {
 		const { countryId } = req.params;
-
-		const cachedCountry = await RedisCache.get(`country-${countryId}`);
-
-		if (cachedCountry) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedCountry), MESSAGES.COUNTRY_FETCHED, true));
-		}
-
 		const country = await Country.findById(countryId);
 		if (!country) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.COUNTRY_NOT_FOUND));
 		}
 
-		await RedisCache.set(`country-${countryId}`, JSON.stringify(country));
 		return res.status(200).json(ReturnResult.success(country, MESSAGES.COUNTRY_FETCHED));
 	};
 
@@ -104,7 +82,6 @@ class CountryController {
 		});
 
 		const savedCountry = await country.save();
-		await RedisCache.flush();
 		return res.status(201).json(ReturnResult.success(savedCountry, MESSAGES.COUNTRY_CREATED));
 	};
 
@@ -134,7 +111,6 @@ class CountryController {
 		country.shortDescription = shortDescription;
 
 		const updatedCountry = await country.save();
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(updatedCountry, MESSAGES.COUNTRY_UPDATED));
 	};
 
@@ -147,25 +123,13 @@ class CountryController {
 		}
 
 		const deletedCountry = await Country.findByIdAndDelete(countryId);
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedCountry, MESSAGES.COUNTRY_DELETED));
 	};
 }
 
 class RegionController {
 	static getRegions = async (req, res) => {
-		const cachedRegions = await RedisCache.get('regions');
-
-		if (cachedRegions) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedRegions), MESSAGES.REGIONS_FETCHED, true));
-		}
-
 		const regions = await Region.find();
-		if (regions.length > 0) {
-			await RedisCache.set('regions', JSON.stringify(regions));
-		}
 		return res.status(200).json(ReturnResult.success(regions, MESSAGES.REGIONS_FETCHED));
 	};
 
@@ -175,43 +139,20 @@ class RegionController {
 			page: parseInt(page, 10),
 			limit: parseInt(limit, 10),
 		};
-
-		const cachedRegions = await RedisCache.get(`regions-${options.page}-${options.limit}`);
-
-		if (cachedRegions) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedRegions), MESSAGES.REGIONS_FETCHED, true));
-		}
-
 		const regions = await Region.find()
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
-
-		if (regions.length > 0) {
-			await RedisCache.set(`regions-${options.page}-${options.limit}`, JSON.stringify(regions));
-		}
 		return res.status(200).json(ReturnResult.success(regions, MESSAGES.REGIONS_FETCHED));
 	};
 
 	static getRegion = async (req, res) => {
 		const { regionId } = req.params;
-
-		const cachedRegion = await RedisCache.get(`region-${regionId}`);
-
-		if (cachedRegion) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedRegion), MESSAGES.REGION_FETCHED, true));
-		}
-
 		const region = await Region.findById(regionId)
 		if (!region) {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.REGION_NOT_FOUND));
 		}
 
-		await RedisCache.set(`region-${regionId}`, JSON.stringify(region));
 		return res.status(200).json(ReturnResult.success(region, MESSAGES.REGION_FETCHED));
 	};
 
@@ -238,7 +179,6 @@ class RegionController {
 		});
 
 		const savedRegion = await region.save();
-		await RedisCache.flush();
 		return res.status(201).json(ReturnResult.success(savedRegion, MESSAGES.REGION_CREATED));
 	};
 
@@ -264,8 +204,6 @@ class RegionController {
 		region.shortDescription = shortDescription;
 
 		const updatedRegion = await region.save();
-		await RedisCache.del(`region-${regionId}`);
-		await RedisCache.del('regions');
 		return res.status(200).json(ReturnResult.success(updatedRegion, MESSAGES.REGION_UPDATED));
 	};
 
@@ -278,7 +216,6 @@ class RegionController {
 		}
 
 		const deletedRegion = await Region.findByIdAndDelete(regionId);
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedRegion, MESSAGES.REGION_DELETED));
 	};
 
@@ -296,25 +233,13 @@ class RegionController {
 		}
 
 		const deletedRegions = await Region.deleteMany({ _id: { $in: regionIds } });
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedRegions, MESSAGES.REGION_DELETED));
 	};
 }
 
 class DistrictController {
 	static getDistricts = async (req, res) => {
-		const cachedDistricts = await RedisCache.get('districts');
-
-		if (cachedDistricts) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedDistricts), MESSAGES.DISTRICTS_FETCHED, true));
-		}
-
 		const districts = await District.find()
-		if (districts.length > 0) {
-			await RedisCache.set('districts', JSON.stringify(districts));
-		}
 		return res.status(200).json(ReturnResult.success(districts, MESSAGES.DISTRICTS_FETCHED));
 	};
 
@@ -324,63 +249,27 @@ class DistrictController {
 			page: parseInt(page, 10),
 			limit: parseInt(limit, 10),
 		};
-
-		const cachedDistricts = await RedisCache.get(`districts-${options.page}-${options.limit}`);
-
-		if (cachedDistricts) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedDistricts), MESSAGES.DISTRICTS_FETCHED, true));
-		}
-
 		const districts = await District.find()
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
 
-		if (districts.length > 0) {
-			await RedisCache.set(`districts-${options.page}-${options.limit}`, JSON.stringify(districts));
-		}
 		return res.status(200).json(ReturnResult.success(districts, MESSAGES.DISTRICTS_FETCHED));
 	};
 
 	static getDistrict = async (req, res) => {
 		const { districtId } = req.params;
-
-		const cachedDistrict = await RedisCache.get(`district-${districtId}`);
-
-		if (cachedDistrict) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedDistrict), MESSAGES.DISTRICT_FETCHED, true));
-		}
-
 		const district = await District.findById(districtId)
 		if (!district) {
 			return ReturnResult.errorMessage(MESSAGES.DISTRICT_NOT_FOUND);
 		}
 
-		await RedisCache.set(`district-${districtId}`, JSON.stringify(district));
 		return res.status(200).json(ReturnResult.success(district, MESSAGES.DISTRICT_FETCHED));
 	};
 
 	static getDistrictByRegion = async (req, res) => {
 		const { regionId } = req.params;
-
-		const cachedDistricts = await RedisCache.get(`districts-${regionId}`);
-
-		if (cachedDistricts) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedDistricts), MESSAGES.DISTRICTS_FETCHED, true));
-		}
-
 		const districts = await District.find({ regionObjId: regionId })
-
-		if (districts.length > 0) {
-			await RedisCache.set(`districts-${regionId}`, JSON.stringify(districts));
-		}
-
 		return res.status(200).json(ReturnResult.success(districts, MESSAGES.DISTRICTS_FETCHED));
 	};
 
@@ -407,7 +296,6 @@ class DistrictController {
 		});
 
 		const savedDistrict = await district.save();
-		await RedisCache.flush();
 		return res.status(201).json(ReturnResult.success(savedDistrict, MESSAGES.DISTRICT_CREATED));
 	};
 
@@ -433,7 +321,6 @@ class DistrictController {
 		district.shortDescription = shortDescription;
 
 		const updatedDistrict = await district.save();
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(updatedDistrict, MESSAGES.DISTRICT_UPDATED));
 	};
 
@@ -446,7 +333,6 @@ class DistrictController {
 		}
 
 		const deletedDistrict = await District.findByIdAndDelete(districtId);
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedDistrict, MESSAGES.DISTRICT_DELETED));
 	};
 
@@ -464,7 +350,6 @@ class DistrictController {
 		}
 
 		const deletedDistricts = await District.deleteMany({ _id: { $in: districtIds } });
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedDistricts, MESSAGES.DISTRICT_DELETED));
 	};
 }
@@ -482,62 +367,27 @@ class ZoneController {
 			limit: parseInt(limit, 10),
 		};
 
-		const cachedZones = await RedisCache.get(`zones-${options.page}-${options.limit}`);
-
-		if (cachedZones) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
-		}
-
 		const zones = await Zone.find()
 			.limit(options.limit * 1)
 			.skip((options.page - 1) * options.limit)
 			.exec();
 
-		if (zones.length > 0) {
-			await RedisCache.set(`zones-${options.page}-${options.limit}`, JSON.stringify(zones));
-		}
 		return res.status(200).json(ReturnResult.success(zones, MESSAGES.ZONES_FETCHED));
 	};
 
 	static getZone = async (req, res) => {
 		const { zoneId } = req.params;
-
-		const cachedZone = await RedisCache.get(`zone-${zoneId}`);
-
-		if (cachedZone) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedZone), MESSAGES.ZONE_FETCHED, true));
-		}
-
 		const zone = await Zone.findById(zoneId)
 		if (!zone) {
 			return ReturnResult.errorMessage(MESSAGES.ZONE_NOT_FOUND);
 		}
 
-		await RedisCache.set(`zone-${zoneId}`, JSON.stringify(zone));
 		return res.status(200).json(ReturnResult.success(zone, MESSAGES.ZONE_FETCHED));
 	};
 
 	static getZonesByDistrict = async (req, res) => {
 		const { districtId } = req.params;
-
-		const cachedZones = await RedisCache.get(`zones-${districtId}`);
-
-		if (cachedZones) {
-			return res
-				.status(200)
-				.json(ReturnResult.success(JSON.parse(cachedZones), MESSAGES.ZONES_FETCHED, true));
-		}
-
 		const zones = await Zone.find({ districtObjId: districtId })
-
-		if (zones.length > 0) {
-			await RedisCache.set(`zones-${districtId}`, JSON.stringify(zones));
-		}
-
 		return res.status(200).json(ReturnResult.success(zones, MESSAGES.ZONES_FETCHED));
 	};
 
@@ -564,7 +414,6 @@ class ZoneController {
 		});
 
 		const savedZone = await zone.save();
-		await RedisCache.flush();
 		return res.status(201).json(ReturnResult.success(savedZone, MESSAGES.ZONE_CREATED));
 	};
 
@@ -590,7 +439,6 @@ class ZoneController {
 		zone.shortDescription = shortDescription;
 
 		const updatedZone = await zone.save();
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(updatedZone, MESSAGES.ZONE_UPDATED));
 	};
 
@@ -603,7 +451,6 @@ class ZoneController {
 		}
 
 		const deletedZone = await Zone.findByIdAndDelete(zoneId);
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedZone, MESSAGES.ZONE_DELETED));
 	};
 
@@ -621,7 +468,6 @@ class ZoneController {
 		}
 
 		const deletedZones = await Zone.deleteMany({ _id: { $in: zoneIds } });
-		await RedisCache.flush();
 		return res.status(200).json(ReturnResult.success(deletedZones, MESSAGES.ZONE_DELETED));
 	};
 }

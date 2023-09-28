@@ -167,6 +167,10 @@ class AuctionController {
 			return res.status(400).json(ReturnResult.errorMessage('You have already paid your auction fee'));
 		}
 
+		if(req.body.price < 1) { 
+			return res.status(400).json(ReturnResult.errorMessage('Price must be greater than 0'));
+		}
+
 		if(req.body.price > user.balance) {
 			return res.status(400).json(ReturnResult.errorMessage('You have not enough balance! Please recharge your account'));
 		}
@@ -320,7 +324,8 @@ class AuctionController {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('User')));
 		}
 
-		const participants = await Participant.find({ auction: auctionId, isVerified: true });
+		const participants = await Participant.find({ auction: auctionId, paymentStatus: 'paid' });
+		
 		if (participants.length > 0) {
 			return res
 				.status(400)
@@ -348,14 +353,6 @@ class AuctionController {
 
 		if (auction.createdBy != userId) {
 			return res.status(401).json(ReturnResult.errorMessage('Unauthorized'));
-		}
-
-		if (auction.status === 'active' || auction.status === 'completed') {
-			return res
-				.status(400)
-				.json(
-					ReturnResult.errorMessage('You can not update auction because it is active or completed')
-				);
 		}
 
 		const startingDate = new Date(startDate);
@@ -578,12 +575,16 @@ class AuctionController {
 			return res.status(404).json(ReturnResult.errorMessage(MESSAGES.notFound('Auction')));
 		}
 
+		if(auction.status === 'completed') {
+			return res.status(400).json(ReturnResult.errorMessage('Auction is completed!'));
+		}
+
 		const isParticipating = await Participant.findOne({
 			auction: auctionId,
 			user: userId,
 		});
 
-		if(isParticipating.paymentStatus == 'pending') {
+		if(isParticipating && isParticipating.paymentStatus && isParticipating.paymentStatus == 'pending') {
 			return res.status(400).json(ReturnResult.errorMessage('Please pay your participation fee'));
 		}
 
@@ -600,7 +601,7 @@ class AuctionController {
 
 		await participant.save();
 
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully participated! Please pay your participation fee'));
+		return res.status(200).json(ReturnResult.success({}, 'Successfully participated! Please pay your participation fee'));
 	};
 
 	static paymentForParticipating = async (req, res) => {
@@ -651,7 +652,7 @@ class AuctionController {
 			participantId: participant._id,
 		}).save();
 
-		return res.status(200).json(ReturnResult.success(auction, 'Successfully paid'));
+		return res.status(200).json(ReturnResult.success({}, 'Successfully paid'));
 	}
 
 	static getParticipantsByPagination = async (req, res) => {

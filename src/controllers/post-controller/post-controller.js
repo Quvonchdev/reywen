@@ -186,7 +186,7 @@ class PostController {
 	static updatePostByUser = async (req, res) => {
 		const { postId, userId } = req.params;
 
-		const { error } = Validation.createPostByUser(req.body);
+		const { error } = Validation.updatePostByUser(req.body);
 
 		if (error) {
 			return res.status(400).json(ReturnResult.errorMessage(error.details[0].message));
@@ -204,7 +204,7 @@ class PostController {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
 		}
 
-		if (post.createdBy !== userId) {
+		if (post.createdBy.toString() !== userId.toString()) {
 			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
 		}
 
@@ -213,34 +213,32 @@ class PostController {
 		}
 
 		const address = {
-			country: req.body.country,
-			region: req.body.region,
-			district: req.body.district,
-			zone: req.body.zone,
-			street: req.body.street,
-			location: req.body.location
+			country: req.body?.country || post.address.country,
+			region: req.body?.region || post.address.region,
+			district: req.body?.district || post.address.district,
+			zone: req.body?.zone || post.address.zone,
+			street: req.body?.street || post.address.street,
+			location: req.body?.location || post.address.location
 		}
 
 		const contact = {
-			contactPhones: req.body.contactPhones,
-			contactEmails: req.body.contactEmails,
-			contactAddress: req.body.contactAddress,
-			socialContacts: req.body.socialContacts
+			contactPhones: req.body?.contactPhones || post.contact.contactPhones,
+			contactEmails: req.body?.contactEmails || post.contact.contactEmails,
+			contactAddress: req.body?.contactAddress || post.contact.contactAddress,
+			socialContacts: req.body?.socialContacts || post.contact.socialContacts
 		}
 
 		const request = {
-			title: req.body.title,
-			shortDescription: req.body.shortDescription,
-			createdBy: req.body.createdBy,
-			category: req.body.category,
-			tags: req.body.tags,
-			price: req.body.price,
-			facilities: req.body.facilities,
-			fullInfo: req.body.fullInfo,
+			title: req.body?.title || post.title,
+			shortDescription: req.body?.shortDescription || post.shortDescription,
+			createdBy: req.body?.createdBy || post.createdBy,
+			category: req.body?.category || post.category,
+			tags: req.body?.tags || post.tags,
+			price: req.body?.price || post.price,
+			facilities: req.body?.facilities || post.facilities,
+			fullInfo: req.body?.fullInfo || post.fullInfo,
 			address: address,
 			contact: contact,
-			coverImage: coverImage,
-			postImages: postImages,
 		}
 
 		post.title = request.title;
@@ -298,12 +296,54 @@ class PostController {
 			return res.status(400).json(ReturnResult.errorMessage('Please upload a file'));
 		}
 
-		// push also post.postImages
 		post.postImages.push(...postImages);
 
 		await post.save();
 		return res.status(200).json(ReturnResult.success(post, 'Post images updated successfully'));
 	};
+
+	static deletePostImage = async (req, res) => {
+		const { postId, userId } = req.params;
+
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
+		}
+		const post = await Post.findById(postId);
+
+		if (!post) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
+		}
+
+		if (post.createdBy != userId) {
+			return res.status(403).json(ReturnResult.errorMessage(ERROR_MESSAGES.FORBIDDEN));
+		}
+
+		const { imagesName } = req.body;
+
+		if (!imagesName) {
+			return res.status(400).json(ReturnResult.errorMessage('Please provide images name'));
+		}
+
+		for (const imageName of imagesName) {
+			const index = post.postImages.indexOf(imageName);
+
+			if (index > -1) {
+				post.postImages.splice(index, 1);
+
+				if (post.coverImage == imageName) {
+					post.coverImage = null;
+				}
+
+				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${imageName}`));
+			}
+		}
+
+		await post.save();
+
+		return res.status(200).json(ReturnResult.success(post, 'Post images updated successfully'));
+	}
 
 	static modifyPostByAdmin = async (req, res) => {
 		const { postId } = req.params;
@@ -448,6 +488,12 @@ class PostController {
 			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_PERMISSION));
 		}
 
+		if (post.postImages && post.postImages.length > 0) {
+			for (const image of post.postImages) {
+				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${image}`));
+			}
+		}
+
 		const deletePost = await Post.findByIdAndDelete(postId);
 
 		if (!deletePost) {
@@ -462,7 +508,7 @@ class PostController {
 
 		const user = await User.findById(userId);
 
-		if (!user || user.userRoles.includes('Admin') == false || user.userRoles.includes('SuperAdmin') == false) {
+		if (!user) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_USER));
 		}
 
@@ -470,10 +516,6 @@ class PostController {
 
 		if (!post) {
 			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_FOUND_POST));
-		}
-
-		if (!post.modernization && post.modernization.modernizationBy !== userId) {
-			return res.status(400).json(ReturnResult.errorMessage(ERROR_MESSAGES.NOT_PERMISSION));
 		}
 
 		const userMessage = req.body.message;
@@ -486,6 +528,12 @@ class PostController {
 			});
 
 			await sendMessage.save();
+		}
+
+		if (post.postImages && post.postImages.length > 0) {
+			for (const image of post.postImages) {
+				removeUploadedFile(path.join(__dirname, `${UPLOADED_IMAGE_PATH}/${image}`));
+			}
 		}
 
 		const deletePost = await Post.findByIdAndDelete(postId);
@@ -622,6 +670,33 @@ class Validation {
 			zone: Joi.string().required(),
 			street: Joi.string().required().min(3).max(255),
 			location: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).required(),
+
+			contactPhones: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactEmails: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			contactAddress: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			socialContacts: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+		});
+
+		return schema.validate(reqBody);
+
+	}	
+	
+	static updatePostByUser(reqBody) {
+		const schema = Joi.object({
+			title: Joi.alternatives(Joi.string(), Joi.object()).optional(),
+			shortDescription: Joi.alternatives(Joi.string(), Joi.object()).optional(),
+			createdBy: Joi.string().optional(),
+			category: Joi.string().optional(),
+			tags: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).optional(),
+			price: Joi.number().required(),
+			facilities: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			fullInfo: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
+			country: Joi.string().optional(),
+			district: Joi.string().optional(),
+			region: Joi.string().optional(),
+			zone: Joi.string().optional(),
+			street: Joi.string().optional().min(3).max(255),
+			location: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).optional(),
 
 			contactPhones: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),
 			contactEmails: Joi.alternatives(Joi.string(),Joi.array(), Joi.object()).allow(null).optional(),

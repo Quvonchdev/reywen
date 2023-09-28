@@ -27,7 +27,6 @@ const scheduleInactiveAuctions = async () => {
 			const currentDate = new Date();
 			const participants = await Participant.find({
 				auction: auction._id,
-				isParticipating: true,
 				paymentStatus: 'paid'
 			});
 

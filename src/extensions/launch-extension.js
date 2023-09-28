@@ -1,5 +1,4 @@
 const { bot } = require('../connections/telegram-bot-connection');
-const redisClient = require('../connections/redis-cache-connection');
 const envSecretsConfig = require('../configurations/env-secrets-config');
 const http = require('http');
 const socketConnection = require('../connections/socket-io-connection');
@@ -20,11 +19,6 @@ module.exports = (app) => {
 
 	// Auction Controller - Socket.io Connection
 	AuctionController.setSocket(socketConnection);
-
-	// Redis Cache Connection
-	(async () => {
-		await redisClient.connect();
-	})();
 
 	const port = envSecretsConfig.PORT || 3000;
 	server.listen(port, () => {

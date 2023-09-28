@@ -1,10 +1,9 @@
 class ReturnResult {
-	static success(data, success_message, fromCache = false) {
+	static success(data, success_message) {
 		return {
 			error: false,
 			message: success_message,
 			details: null,
-			fromCache: fromCache,
 			data: data,
 		};
 	}
@@ -14,17 +13,15 @@ class ReturnResult {
 			error: true,
 			message: error_message,
 			details: error.message || error,
-			fromCache: false,
 			data: null,
 		};
 	}
 
-	static successMessage(success_message, fromCache = false) {
+	static successMessage(success_message) {
 		return {
 			error: false,
 			message: success_message,
 			details: null,
-			fromCache: fromCache,
 			data: null,
 		};
 	}
@@ -33,7 +30,6 @@ class ReturnResult {
 			error: true,
 			message: error_message,
 			details: null,
-			fromCache: false,
 			data: null,
 		};
 	}

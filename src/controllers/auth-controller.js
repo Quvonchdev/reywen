@@ -654,6 +654,33 @@ class UserController {
 
 		return res.status(200).json(ReturnResult.successMessage('User role successfully added!'));
 	};
+
+	static blockUserBySuperAdmin = async (req, res) => {
+		const { userId } = req.params;
+
+		const { blockUser } = req.body;
+
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		const checkUser = await User.findById(blockUser);
+
+		if (!checkUser) {
+			return res.status(404).json(ReturnResult.errorMessage(ERROR_MESSAGES.USER_NOT_FOUND));
+		}
+
+		if(checkUser.isBlockedUser === true) {
+			return res.status(400).json(ReturnResult.errorMessage('User already blocked!'));
+		}
+
+		checkUser.isBlockedUser = true;
+		await checkUser.save();
+
+		return res.status(200).json(ReturnResult.successMessage('User successfully blocked!'));
+	}
 }
 
 // VALIDATIONS

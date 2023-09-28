@@ -12,6 +12,7 @@ router.get('/:auctionId/single', [rateLimit(50, 1)], AuctionController.getAuctio
 router.get('/', [rateLimit(50, 1)], AuctionController.getAuctionsByPagination);
 
 router.post('/', [rateLimit(10, 1), authRole], AuctionController.createAuction);
+router.put('/:auctionId/:userId/payment', [rateLimit(10, 1), authRole], AuctionController.paymentAuction);
 
 router.put(
 	'/:auctionId/:userId',
@@ -69,6 +70,12 @@ router.post(
 	'/:auctionId/:userId/participate',
 	[rateLimit(10, 1), authRole],
 	AuctionController.participateInAuction
+);
+
+router.put(
+	'/:auctionId/:userId/payment-confirmation',
+	[rateLimit(10, 1), authRole],
+	AuctionController.paymentForParticipating
 );
 router.delete('/:auctionId/:userId', [rateLimit(10, 1), authRole], AuctionController.deleteAuction);
 
